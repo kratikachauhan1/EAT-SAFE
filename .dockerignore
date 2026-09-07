@@ -1,0 +1,16 @@
+.git
+.github
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache
+venv
+.venv
+env
+node_modules
+.env
+*.db
+*.sqlite3
+static/uploads/*
+!static/uploads/.gitkeep
