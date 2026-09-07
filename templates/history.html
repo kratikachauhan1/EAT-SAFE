@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block title %}Scan History - EAT SAFE AI{% endblock %}
+
+{% block page_title %}Scan History{% endblock %}
+{% block page_desc %}Log of all previously analyzed food packaging labels and detection results{% endblock %}
+
+{% block content %}
+<div class="saas-card">
+  
+  <!-- Header & Controls -->
+  <div class="saas-card-header" style="flex-wrap: wrap; gap: 1rem;">
+    <h3 class="saas-card-title">
+      <i data-lucide="history"></i> Scan Log & Results
+    </h3>
+    
+    <!-- Filter Pills -->
+    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+      <button class="btn btn-secondary btn-sm" style="background-color: var(--primary-light); color: var(--primary); border-color: var(--primary-border);">All Scans</button>
+      <button class="btn btn-secondary btn-sm">Warnings</button>
+      <button class="btn btn-secondary btn-sm">No Selected Match</button>
+      <button class="btn btn-secondary btn-sm">Needs Review</button>
+    </div>
+  </div>
+
+  {% if scans %}
+    <div class="saas-table-container">
+      <table class="saas-table">
+        <thead>
+          <tr>
+            <th>Scan ID & Thumbnail</th>
+            <th>Date & Time</th>
+            <th>OCR Confidence</th>
+            <th>Detected Allergens</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for scan in scans %}
+            <tr>
+              <td>
+                <div style="display: flex; align-items: center; gap: 0.85rem;">
+                  <img src="{{ url_for('static', filename=scan.image_path) }}" alt="Thumbnail" style="width: 44px; height: 44px; object-fit: cover; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">
+                  <div>
+                    <strong style="color: var(--text-primary); font-size: 0.92rem;">Scan #{{ scan.scan_id }}</strong>
+                  </div>
+                </div>
+              </td>
+              <td style="color: var(--text-secondary); font-size: 0.85rem;">{{ scan.created_at }}</td>
+              <td>
+                <span class="badge badge-neutral">{{ scan.ocr_confidence }}%</span>
+              </td>
+              <td>
+                {% if scan.results %}
+                  {% set user_matched = scan.results | selectattr('is_user_allergy', 'equalto', 1) | list %}
+                  {% if user_matched %}
+                    <span style="font-weight: 700; color: var(--text-danger);">
+                      {{ user_matched | map(attribute='category_name') | unique | join(', ') }}
+                    </span>
+                  {% else %}
+                    <span style="color: var(--text-secondary);">Other allergens</span>
+                  {% endif %}
+                {% else %}
+                  <span style="color: var(--text-tertiary);">None detected</span>
+                {% endif %}
+              </td>
+              <td>
+                {% set user_matched = scan.results | selectattr('is_user_allergy', 'equalto', 1) | list %}
+                {% set explicit_matched = user_matched | selectattr('statement_type', 'equalto', 'explicit') | list %}
+                {% set prec_matched = user_matched | selectattr('statement_type', 'equalto', 'precautionary') | list %}
+
+                {% if explicit_matched %}
+                  <span class="badge badge-danger">WARNING</span>
+                {% elif prec_matched %}
+                  <span class="badge badge-warning">MAY CONTAIN</span>
+                {% elif scan.results %}
+                  <span class="badge badge-info">INFO</span>
+                {% else %}
+                  <span class="badge badge-success">CLEAR</span>
+                {% endif %}
+              </td>
+              <td>
+                <a href="{{ url_for('main.result', scan_id=scan.scan_id) }}" class="btn btn-secondary btn-sm">
+                  View Analysis
+                </a>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <!-- Professional Empty State -->
+    <div style="text-align: center; padding: 3rem 1.5rem; background-color: var(--bg-page); border-radius: var(--radius-md); border: 1px dashed var(--border-medium);">
+      <div style="width: 52px; height: 52px; border-radius: var(--radius-full); background: #ffffff; border: 1px solid var(--border-subtle); display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem auto; color: var(--text-secondary);">
+        <i data-lucide="inbox" style="width: 24px; height: 24px;"></i>
+      </div>
+      <h4 style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.25rem;">No scan history yet</h4>
+      <p style="font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 1.25rem;">
+        Your analyzed food labels and personalized allergen detection reports will appear here.
+      </p>
+      <a href="{{ url_for('main.scan') }}" class="btn btn-primary">
+        <i data-lucide="scan"></i> Scan Your First Label
+      </a>
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}

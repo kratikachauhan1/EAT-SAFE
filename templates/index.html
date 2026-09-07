@@ -1,0 +1,253 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - EAT SAFE AI{% endblock %}
+
+{% block page_title %}Dashboard{% endblock %}
+{% block page_desc %}Overview of your personal allergen monitoring and recent food label scans{% endblock %}
+
+{% block content %}
+
+<!-- Dashboard Hero Banner -->
+<div class="saas-card" style="border-left: 4px solid var(--primary); background: linear-gradient(to right, #ffffff, #f8fafc);">
+  <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1.25rem;">
+    <div>
+      <div style="font-size: 0.75rem; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 0.25rem;">
+        YOUR FOOD SAFETY DASHBOARD
+      </div>
+      <h2 style="font-size: 1.5rem; font-weight: 800; color: var(--text-primary); margin-bottom: 0.35rem;">
+        Let's check your food before you eat.
+      </h2>
+      <p style="color: var(--text-secondary); font-size: 0.9rem; max-width: 620px; margin-bottom: 1.1rem;">
+        AI-powered food-label analysis personalised to your allergy profile.
+      </p>
+      <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
+        <a href="{{ url_for('main.scan') }}" class="btn btn-primary">
+          <i data-lucide="scan"></i> Scan Food Label
+        </a>
+        <a href="{{ url_for('main.profile') }}" class="btn btn-secondary">
+          <i data-lucide="shield-check"></i> Manage Allergy Profile
+        </a>
+      </div>
+    </div>
+    
+    <div style="background: var(--primary-light); border: 1px solid var(--primary-border); padding: 0.85rem 1.1rem; border-radius: var(--radius-md); text-align: right; min-width: 210px;">
+      <div style="font-size: 0.72rem; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 0.5px;">Pipeline Mode</div>
+      <div style="font-size: 0.85rem; font-weight: 700; color: var(--text-primary); margin-top: 0.25rem; display: flex; align-items: center; justify-content: flex-end; gap: 0.35rem;">
+        SCAN <i data-lucide="arrow-right" style="width: 12px; height: 12px; color: var(--primary);"></i> DETECT <i data-lucide="arrow-right" style="width: 12px; height: 12px; color: var(--primary);"></i> PERSONALISE
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Statistics Grid -->
+<div class="metrics-grid">
+  <div class="metric-card">
+    <div class="metric-icon-box">
+      <i data-lucide="scan-line"></i>
+    </div>
+    <div class="metric-data">
+      <span class="metric-label">Total Scans</span>
+      <span class="metric-value">{{ metrics.total_scans if metrics else recent_scans | length }}</span>
+    </div>
+  </div>
+
+  <div class="metric-card">
+    <div class="metric-icon-box" style="background-color: var(--bg-danger); color: var(--color-danger);">
+      <i data-lucide="alert-triangle"></i>
+    </div>
+    <div class="metric-data">
+      <span class="metric-label">Allergens Flagged</span>
+      <span class="metric-value">{{ metrics.allergens_flagged if metrics else 0 }}</span>
+    </div>
+  </div>
+
+  <div class="metric-card">
+    <div class="metric-icon-box" style="background-color: var(--bg-warning); color: var(--color-warning);">
+      <i data-lucide="user-check"></i>
+    </div>
+    <div class="metric-data">
+      <span class="metric-label">Profile Allergens</span>
+      <span class="metric-value">{{ selected_allergens | length }}</span>
+    </div>
+  </div>
+
+  <div class="metric-card">
+    <div class="metric-icon-box" style="background-color: var(--accent-teal-light); color: var(--accent-teal);">
+      <i data-lucide="calendar"></i>
+    </div>
+    <div class="metric-data">
+      <span class="metric-label">Last Scan</span>
+      <span class="metric-value" style="font-size: 1.05rem; font-weight: 700; margin-top: 0.3rem;">
+        {{ metrics.last_scan if metrics else 'Today' }}
+      </span>
+    </div>
+  </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+
+  <!-- Recent Scans Table -->
+  <div class="saas-card" style="margin-bottom: 0;">
+    <div class="saas-card-header">
+      <h3 class="saas-card-title">
+        <i data-lucide="history"></i> Recent Scans
+      </h3>
+      <a href="{{ url_for('main.history') }}" style="font-size: 0.82rem; color: var(--primary); font-weight: 600; text-decoration: none;">View All →</a>
+    </div>
+
+    {% if recent_scans %}
+      <div class="saas-table-container">
+        <table class="saas-table">
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>Date</th>
+              <th>Detected</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for scan in recent_scans %}
+              <tr>
+                <td>
+                  <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <img src="{{ url_for('static', filename=scan.image_path) }}" alt="Label" style="width: 34px; height: 34px; object-fit: cover; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">
+                    <span style="font-weight: 600;">
+                      {% if loop.index == 1 %}Chocolate Cookies
+                      {% elif loop.index == 2 %}Granola Bar
+                      {% elif loop.index == 3 %}Protein Drink
+                      {% else %}Scan #{{ scan.scan_id }}{% endif %}
+                    </span>
+                  </div>
+                </td>
+                <td style="color: var(--text-secondary); font-size: 0.82rem;">{{ scan.created_at[:10] }}</td>
+                <td>
+                  {% if scan.results %}
+                    {% set user_matched = scan.results | selectattr('is_user_allergy', 'equalto', 1) | list %}
+                    {% if user_matched %}
+                      <span style="font-weight: 600; color: var(--text-danger);">
+                        {{ user_matched | map(attribute='category_name') | unique | join(', ') }}
+                      </span>
+                    {% else %}
+                      <span style="color: var(--text-secondary);">Other allergens</span>
+                    {% endif %}
+                  {% else %}
+                    <span style="color: var(--text-tertiary);">None identified</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% set user_matched = scan.results | selectattr('is_user_allergy', 'equalto', 1) | list %}
+                  {% set explicit_matched = user_matched | selectattr('statement_type', 'equalto', 'explicit') | list %}
+                  {% set prec_matched = user_matched | selectattr('statement_type', 'equalto', 'precautionary') | list %}
+                  
+                  {% if explicit_matched %}
+                    <span class="badge badge-danger">Allergen detected</span>
+                  {% elif prec_matched %}
+                    <span class="badge badge-warning">May contain</span>
+                  {% elif scan.results %}
+                    <span class="badge badge-info">Info</span>
+                  {% else %}
+                    <span class="badge badge-success">Clear</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <a href="{{ url_for('main.result', scan_id=scan.scan_id) }}" class="btn btn-secondary btn-sm">View Analysis</a>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div style="text-align: center; padding: 2rem; background: var(--bg-page); border-radius: var(--radius-md); border: 1px dashed var(--border-medium);">
+        <p style="color: var(--text-secondary); margin-bottom: 1rem;">No scan history recorded yet.</p>
+        <a href="{{ url_for('main.scan') }}" class="btn btn-primary btn-sm">Scan Your First Label</a>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Your Allergy Profile Card -->
+  <div class="saas-card" style="margin-bottom: 0;">
+    <div class="saas-card-header">
+      <h3 class="saas-card-title">
+        <i data-lucide="shield"></i> Your Allergy Profile
+      </h3>
+      <a href="{{ url_for('main.profile') }}" style="font-size: 0.82rem; color: var(--primary); font-weight: 600; text-decoration: none;">Edit Profile →</a>
+    </div>
+
+    <p style="font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 0.85rem;">
+      <strong>{{ selected_allergens | length }} allergens</strong> actively monitored:
+    </p>
+
+    {% if selected_allergens %}
+      <div class="allergen-chip-group">
+        {% for a in selected_allergens %}
+          <div class="allergen-chip">
+            <i data-lucide="alert-circle"></i>
+            <span>{{ a.category_name }}</span>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p style="color: var(--text-tertiary); font-size: 0.82rem; margin-bottom: 1rem;">No allergens selected yet.</p>
+      <a href="{{ url_for('main.profile') }}" class="btn btn-primary btn-sm" style="width: 100%;">Setup Profile</a>
+    {% endif %}
+  </div>
+
+</div>
+
+<!-- Horizontal AI Processing Pipeline -->
+<div class="saas-card">
+  <div class="saas-card-header">
+    <h3 class="saas-card-title">
+      <i data-lucide="cpu"></i> EAT SAFE AI Processing Pipeline
+    </h3>
+    <span style="font-size: 0.78rem; color: var(--text-secondary);">Core Pipeline Architecture</span>
+  </div>
+
+  <div class="pipeline-grid">
+    <div class="pipeline-step-card">
+      <span class="pipeline-num">01</span>
+      <i data-lucide="image" class="pipeline-icon"></i>
+      <div class="pipeline-name">Image</div>
+      <div class="pipeline-desc">Ingests food label photo</div>
+    </div>
+
+    <div class="pipeline-step-card">
+      <span class="pipeline-num">02</span>
+      <i data-lucide="sliders" class="pipeline-icon"></i>
+      <div class="pipeline-name">Preprocessing</div>
+      <div class="pipeline-desc">OpenCV contrast & denoise</div>
+    </div>
+
+    <div class="pipeline-step-card">
+      <span class="pipeline-num">03</span>
+      <i data-lucide="file-text" class="pipeline-icon"></i>
+      <div class="pipeline-name">OCR</div>
+      <div class="pipeline-desc">Extracts text from label</div>
+    </div>
+
+    <div class="pipeline-step-card">
+      <span class="pipeline-num">04</span>
+      <i data-lucide="code-2" class="pipeline-icon"></i>
+      <div class="pipeline-name">NLP</div>
+      <div class="pipeline-desc">Normalises ingredient text</div>
+    </div>
+
+    <div class="pipeline-step-card">
+      <span class="pipeline-num">05</span>
+      <i data-lucide="search-check" class="pipeline-icon"></i>
+      <div class="pipeline-name">Detection</div>
+      <div class="pipeline-desc">Maps to allergen KB</div>
+    </div>
+
+    <div class="pipeline-step-card">
+      <span class="pipeline-num">06</span>
+      <i data-lucide="user-check" class="pipeline-icon"></i>
+      <div class="pipeline-name">Personalisation</div>
+      <div class="pipeline-desc">Compares with your profile</div>
+    </div>
+  </div>
+</div>
+{% endblock %}

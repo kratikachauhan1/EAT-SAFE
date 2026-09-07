@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block title %}Scan Food Label - EAT SAFE AI{% endblock %}
+
+{% block page_title %}Scan Food Label{% endblock %}
+{% block page_desc %}Upload a clear photo of the ingredients list or allergen information{% endblock %}
+
+{% block content %}
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem;">
+
+  <!-- Column 1: Scanner Form -->
+  <div class="saas-card">
+    <form action="{{ url_for('main.scan') }}" method="POST" enctype="multipart/form-data" id="scan-form">
+      <input type="hidden" name="sample_choice" id="sample_choice" value="">
+
+      <!-- Drag & Drop Area -->
+      <div class="scanner-dropzone" id="dropzone">
+        <div class="dropzone-icon-box">
+          <i data-lucide="upload-cloud" style="width: 28px; height: 28px;"></i>
+        </div>
+        <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.25rem;">
+          Drag & drop food label image here
+        </h3>
+        <p style="color: var(--text-secondary); font-size: 0.88rem; margin-bottom: 1rem;">
+          or click to browse from your device (JPG, PNG, WEBP)
+        </p>
+        <button type="button" class="btn btn-secondary btn-sm">Browse File</button>
+        <input type="file" name="label_image" id="label_image" accept="image/*" style="display: none;">
+      </div>
+
+      <!-- Live Camera Toggle Option -->
+      <div style="text-align: center; margin: 1.25rem 0;">
+        <button type="button" class="btn btn-secondary btn-sm" id="start-camera-btn">
+          <i data-lucide="camera" style="width: 16px; height: 16px;"></i> Use Device Camera
+        </button>
+        <video id="camera-video" autoplay playsinline style="display: none; width: 100%; max-width: 450px; margin: 1rem auto; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);"></video>
+        <button type="button" class="btn btn-primary btn-sm" id="capture-btn" style="display: none; margin-top: 0.5rem;">
+          <i data-lucide="aperture" style="width: 16px; height: 16px;"></i> Capture Snapshot
+        </button>
+      </div>
+
+      <!-- File Preview Container -->
+      <div id="file-preview" style="display: none; margin: 1.25rem 0; padding: 1rem; background: var(--bg-page); border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+        <div style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.5rem;">Selected Label Preview:</div>
+        <img id="preview-img" src="" alt="Preview" style="max-width: 100%; max-height: 320px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle); display: block; margin: 0 auto;">
+      </div>
+
+      <!-- Processing Step Indicator (Simulated Progress) -->
+      <div id="processing-indicator" style="display: none; margin: 1.5rem 0; padding: 1rem 1.25rem; background-color: var(--primary-light); border: 1px solid var(--primary-border); border-radius: var(--radius-md);">
+        <div style="font-size: 0.88rem; font-weight: 700; color: var(--primary); margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
+          <i data-lucide="loader-2" class="spin" style="width: 18px; height: 18px;"></i> Processing label with EAT SAFE AI...
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.82rem; color: var(--text-secondary);">
+          <div style="color: var(--color-success); font-weight: 600;">✓ Image preprocessing (OpenCV)</div>
+          <div style="color: var(--color-success); font-weight: 600;">✓ OCR text extraction (Tesseract)</div>
+          <div style="color: var(--primary); font-weight: 700;">● Ingredient analysis & NLP phrase parsing</div>
+          <div style="color: var(--text-tertiary);">○ Allergen matching against Knowledge Base</div>
+          <div style="color: var(--text-tertiary);">○ Personalised risk evaluation</div>
+        </div>
+      </div>
+
+      <!-- Quick Test Samples Section -->
+      {% if samples %}
+        <div style="margin-top: 1.5rem; border-top: 1px solid var(--border-subtle); padding-top: 1.25rem;">
+          <div style="font-size: 0.85rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.4rem;">
+            Test with Sample Labels:
+          </div>
+          <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.75rem;">Click a sample label below to test instant OCR parsing:</p>
+          <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+            {% for sample in samples %}
+              <button type="button" class="btn btn-secondary btn-sm" onclick="selectSample('{{ sample }}')">
+                <i data-lucide="file-check-2" style="width: 14px; height: 14px;"></i> {{ sample }}
+              </button>
+            {% endfor %}
+          </div>
+        </div>
+      {% endif %}
+
+      <div style="margin-top: 1.75rem; display: flex; justify-content: flex-end;">
+        <button type="submit" class="btn btn-primary btn-lg" id="submit-scan-btn">
+          <i data-lucide="arrow-right"></i> Analyze & Detect Allergens
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Column 2: Scanning Guidance Checklist -->
+  <div>
+    <div class="saas-card">
+      <div class="saas-card-header">
+        <h3 class="saas-card-title">
+          <i data-lucide="check-square"></i> Scanning Guidance
+        </h3>
+      </div>
+      <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">
+        Follow these tips to ensure high OCR extraction accuracy:
+      </p>
+
+      <ul style="list-style: none; display: flex; flex-direction: column; gap: 0.75rem; font-size: 0.85rem;">
+        <li style="display: flex; align-items: flex-start; gap: 0.6rem;">
+          <i data-lucide="check-circle-2" style="color: var(--color-success); width: 18px; height: 18px; flex-shrink: 0; margin-top: 1px;"></i>
+          <span>Keep the label straight and flat</span>
+        </li>
+        <li style="display: flex; align-items: flex-start; gap: 0.6rem;">
+          <i data-lucide="check-circle-2" style="color: var(--color-success); width: 18px; height: 18px; flex-shrink: 0; margin-top: 1px;"></i>
+          <span>Ensure ingredient text is clearly readable</span>
+        </li>
+        <li style="display: flex; align-items: flex-start; gap: 0.6rem;">
+          <i data-lucide="check-circle-2" style="color: var(--color-success); width: 18px; height: 18px; flex-shrink: 0; margin-top: 1px;"></i>
+          <span>Avoid harsh glare, blur, and shadows</span>
+        </li>
+        <li style="display: flex; align-items: flex-start; gap: 0.6rem;">
+          <i data-lucide="check-circle-2" style="color: var(--color-success); width: 18px; height: 18px; flex-shrink: 0; margin-top: 1px;"></i>
+          <span>Capture the complete ingredient list & "Contains" section</span>
+        </li>
+      </ul>
+    </div>
+
+    <div class="saas-card" style="background-color: var(--primary-light); border-color: var(--primary-border);">
+      <div style="font-size: 0.85rem; font-weight: 700; color: var(--primary); margin-bottom: 0.25rem;">
+        Personal Profile Active
+      </div>
+      <p style="font-size: 0.82rem; color: var(--text-secondary);">
+        Checking against {{ user_allergy_count }} active profile allergens. You can update your monitored profile anytime in Settings.
+      </p>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

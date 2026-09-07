@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}EAT SAFE - Personalised Food Allergen Detection{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/logo.png') }}">
+  <!-- Lucide Vector Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+  <div class="app-shell">
+    
+    <!-- LEFT SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="EAT SAFE" class="sidebar-logo-img">
+        <div class="sidebar-brand-text">EAT <span>SAFE</span></div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a href="{{ url_for('main.index') }}" class="sidebar-link {% if request.endpoint == 'main.index' %}active{% endif %}">
+          <i data-lucide="layout-dashboard"></i>
+          <span>Dashboard</span>
+        </a>
+        <a href="{{ url_for('main.scan') }}" class="sidebar-link {% if request.endpoint == 'main.scan' %}active{% endif %}">
+          <i data-lucide="scan-line"></i>
+          <span>Scan Label</span>
+        </a>
+        <a href="{{ url_for('main.profile') }}" class="sidebar-link {% if request.endpoint == 'main.profile' %}active{% endif %}">
+          <i data-lucide="shield-check"></i>
+          <span>Allergy Profile</span>
+        </a>
+        <a href="{{ url_for('main.history') }}" class="sidebar-link {% if request.endpoint == 'main.history' %}active{% endif %}">
+          <i data-lucide="history"></i>
+          <span>Scan History</span>
+        </a>
+        <a href="{{ url_for('main.profile') }}" class="sidebar-link">
+          <i data-lucide="settings"></i>
+          <span>Settings</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="user-avatar">DU</div>
+        <div class="user-info">
+          <span class="user-name">default_user</span>
+          <span class="user-status"><span class="status-dot"></span> Profile Active</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN AREA -->
+    <div class="main-content">
+      
+      <!-- Top Header Bar -->
+      <header class="top-header">
+        <div class="header-title-block">
+          <h1 class="header-page-title">{% block page_title %}Dashboard{% endblock %}</h1>
+          <p class="header-description">{% block page_desc %}AI-assisted food label screening & personalized allergen detection{% endblock %}</p>
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <a href="{{ url_for('main.scan') }}" class="btn btn-primary btn-sm">
+            <i data-lucide="camera" style="width: 15px; height: 15px;"></i> Scan Food Label
+          </a>
+        </div>
+      </header>
+
+      <!-- Page Content -->
+      <div class="page-container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="flash-messages">
+              {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+      </div>
+
+      <!-- Footer Disclaimer -->
+      <footer class="footer-disclaimer">
+        <div>
+          <strong>EAT SAFE</strong> — Assistive AI Food Safety Screening System
+        </div>
+        <div>
+          ⚠️ <em>Assistive information tool only. Not a medical diagnostic tool or guarantee of 100% safety.</em>
+        </div>
+      </footer>
+
+    </div>
+
+  </div>
+
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  <script>
+    lucide.createIcons();
+  </script>
+</body>
+</html>

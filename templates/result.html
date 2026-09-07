@@ -1,0 +1,244 @@
+{% extends "base.html" %}
+
+{% block title %}Food Label Analysis - EAT SAFE AI{% endblock %}
+
+{% block page_title %}Food Label Analysis{% endblock %}
+{% block page_desc %}Personalised allergen risk report & explainable label evidence{% endblock %}
+
+{% block content %}
+
+<!-- Top Result Banner -->
+<div class="result-banner banner-{{ summary.status_color }}">
+  <div class="banner-icon">
+    {% if summary.overall_status == 'DANGER' %}
+      <i data-lucide="alert-octagon"></i>
+    {% elif summary.overall_status == 'CAUTION' %}
+      <i data-lucide="alert-triangle"></i>
+    {% elif summary.overall_status == 'UNREADABLE' %}
+      <i data-lucide="help-circle"></i>
+    {% else %}
+      <i data-lucide="check-circle-2"></i>
+    {% endif %}
+  </div>
+  <div class="banner-content">
+    <h2>
+      {% if summary.overall_status == 'DANGER' %}ALLERGEN DETECTED
+      {% elif summary.overall_status == 'CAUTION' %}PRECAUTIONARY ALLERGEN CAUTION
+      {% elif summary.overall_status == 'UNREADABLE' %}UNREADABLE LABEL - MANUAL CHECK REQUIRED
+      {% else %}NO SELECTED ALLERGEN IDENTIFIED{% endif %}
+    </h2>
+    <p style="font-weight: 600; font-size: 0.95rem; margin-top: 0.15rem;">
+      {% set all_matched = summary.user_explicit_warnings + summary.user_precautionary_cautions %}
+      {% if all_matched %}
+        Potential {{ all_matched | map(attribute='category_name') | unique | join(', ') }} match
+      {% else %}
+        No selected allergen was identified in the readable label text. Please verify the original packaging before consuming.
+      {% endif %}
+    </p>
+  </div>
+</div>
+
+<!-- Summary Metrics Bar -->
+<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem;">
+  <div class="saas-card" style="padding: 0.9rem 1.1rem; margin-bottom: 0;">
+    <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">Your Allergies</div>
+    <div style="font-weight: 700; color: var(--text-primary); margin-top: 0.2rem; font-size: 0.95rem;">
+      {{ summary.user_selected_allergies | join(', ') if summary.user_selected_allergies else 'None set' }}
+    </div>
+  </div>
+
+  <div class="saas-card" style="padding: 0.9rem 1.1rem; margin-bottom: 0;">
+    <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">Detected</div>
+    <div style="font-weight: 700; color: var(--text-danger); margin-top: 0.2rem; font-size: 0.95rem;">
+      {% if all_matched %}
+        {{ all_matched | map(attribute='category_name') | unique | join(', ') }}
+      {% else %}
+        None
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="saas-card" style="padding: 0.9rem 1.1rem; margin-bottom: 0;">
+    <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">Matched Evidence</div>
+    <div style="font-weight: 700; color: var(--text-primary); margin-top: 0.2rem; font-size: 0.95rem;">
+      {% if all_matched %}
+        "{{ all_matched[0].matched_term }}"
+      {% else %}
+        N/A
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="saas-card" style="padding: 0.9rem 1.1rem; margin-bottom: 0;">
+    <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">OCR Confidence</div>
+    <div style="font-weight: 700; color: var(--primary); margin-top: 0.2rem; font-size: 0.95rem;">
+      {{ summary.ocr_confidence }}% (AI Score)
+    </div>
+  </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 3fr 2fr; gap: 1.5rem;">
+
+  <!-- Column 1: Explainable AI & Categorized Evidence -->
+  <div>
+
+    <!-- WHY WAS THIS FLAGGED? Section -->
+    {% if summary.user_explicit_warnings or summary.user_precautionary_cautions %}
+      <div class="saas-card">
+        <div class="saas-card-header">
+          <h3 class="saas-card-title">
+            <i data-lucide="help-circle"></i> WHY WAS THIS FLAGGED?
+          </h3>
+          <span class="badge badge-info">Explainable AI Evidence</span>
+        </div>
+
+        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">
+          The extracted OCR text contains terms that map directly to your active allergy profile:
+        </p>
+
+        {% for w in summary.user_explicit_warnings %}
+          <div class="explainable-box">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.4rem;">
+              <strong style="color: var(--text-danger); font-size: 0.92rem;">
+                Category: {{ w.category_name }}
+              </strong>
+              <span class="badge badge-danger">EXPLICIT ALLERGEN</span>
+            </div>
+            
+            <div style="font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 0.4rem;">
+              Matched Ingredient Snippet:
+            </div>
+
+            <div style="background-color: #ffffff; border: 1px solid var(--border-subtle); padding: 0.65rem 0.85rem; border-radius: var(--radius-sm); font-family: monospace; font-size: 0.85rem; color: var(--text-primary);">
+              "... {{ w.evidence_text | replace(w.matched_term, '<span class="highlight-term">' ~ w.matched_term ~ '</span>') | safe }} ..."
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 0.4rem; margin-top: 0.65rem; font-size: 0.8rem; color: var(--text-secondary);">
+              <span class="highlight-term" style="font-size: 0.78rem;">"{{ w.matched_term }}"</span>
+              <i data-lucide="arrow-right" style="width: 12px; height: 12px;"></i>
+              <span>Mapped to <strong>{{ w.category_name }}</strong></span>
+              <i data-lucide="arrow-right" style="width: 12px; height: 12px;"></i>
+              <span style="color: var(--text-danger); font-weight: 700;">Matched with your allergy profile</span>
+            </div>
+          </div>
+        {% endfor %}
+
+        {% for w in summary.user_precautionary_cautions %}
+          <div class="explainable-box" style="border-left-color: var(--color-warning);">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.4rem;">
+              <strong style="color: var(--text-warning); font-size: 0.92rem;">
+                Category: {{ w.category_name }}
+              </strong>
+              <span class="badge badge-warning">PRECAUTIONARY STATEMENT</span>
+            </div>
+
+            <div style="font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 0.4rem;">
+              Precautionary Statement Snippet ("May Contain"):
+            </div>
+
+            <div style="background-color: #ffffff; border: 1px solid var(--border-subtle); padding: 0.65rem 0.85rem; border-radius: var(--radius-sm); font-family: monospace; font-size: 0.85rem; color: var(--text-primary);">
+              "... {{ w.evidence_text | replace(w.matched_term, '<span class="highlight-term" style="background-color:#fef3c7; color:#92400e; border-color:#fde047;">' ~ w.matched_term ~ '</span>') | safe }} ..."
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 0.4rem; margin-top: 0.65rem; font-size: 0.8rem; color: var(--text-secondary);">
+              <span class="highlight-term" style="font-size: 0.78rem; background-color:#fef3c7; color:#92400e;">"{{ w.matched_term }}"</span>
+              <i data-lucide="arrow-right" style="width: 12px; height: 12px;"></i>
+              <span>Cross-contamination caution for <strong>{{ w.category_name }}</strong></span>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <!-- Other Non-Profile Allergens Detected -->
+    {% if summary.other_detected_results %}
+      <div class="saas-card">
+        <div class="saas-card-header">
+          <h3 class="saas-card-title">
+            <i data-lucide="info"></i> Other Allergens Detected on Product Label
+          </h3>
+        </div>
+        <p style="font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 0.75rem;">
+          These allergens were detected on the label, but are not in your active profile:
+        </p>
+
+        <div style="display: flex; flex-direction: column; gap: 0.45rem;">
+          {% for o in summary.other_detected_results %}
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.55rem 0.75rem; background: #f8fafc; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm);">
+              <span style="font-weight: 600;">{{ o.category_name }} <span style="font-weight: 400; color: var(--text-secondary); font-size: 0.8rem;">(term: '{{ o.matched_term }}')</span></span>
+              <span class="badge badge-neutral">{{ o.statement_type | upper }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    {% endif %}
+
+    <!-- Clear Screening Card -->
+    {% if not summary.user_explicit_warnings and not summary.user_precautionary_cautions and summary.is_ocr_reliable %}
+      <div class="saas-card" style="border-left: 4px solid var(--color-success);">
+        <div class="saas-card-header">
+          <h3 class="saas-card-title" style="color: var(--text-success);">
+            <i data-lucide="shield-check"></i> Personal Screening Clear
+          </h3>
+        </div>
+        <p style="color: var(--text-secondary); font-size: 0.88rem; margin-bottom: 0.85rem;">
+          No selected allergen was identified in the readable label text. Please verify the original packaging before consuming.
+        </p>
+        <div class="allergen-chip-group">
+          {% for allergy_name in summary.user_selected_allergies %}
+            <div class="allergen-chip" style="background-color: var(--bg-success); border-color: var(--border-success); color: var(--text-success);">
+              <i data-lucide="check" style="color: var(--color-success);"></i>
+              <span>{{ allergy_name }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    {% endif %}
+
+  </div>
+
+  <!-- Column 2: Scanned Image & OCR Document Panel -->
+  <div>
+    <!-- Label Image Card -->
+    <div class="saas-card">
+      <div class="saas-card-header">
+        <h3 class="saas-card-title">
+          <i data-lucide="image"></i> Scanned Food Label
+        </h3>
+      </div>
+      <div style="text-align: center;">
+        <img src="{{ url_for('static', filename=scan.image_path) }}" alt="Scanned Label" style="max-width: 100%; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+      </div>
+    </div>
+
+    <!-- Document-Style OCR Text Panel -->
+    <div class="saas-card">
+      <div class="saas-card-header">
+        <h3 class="saas-card-title">
+          <i data-lucide="file-text"></i> Extracted Label Text
+        </h3>
+        <span class="badge badge-neutral">OCR Confidence: {{ scan.ocr_confidence }}%</span>
+      </div>
+
+      {% if not summary.is_ocr_reliable %}
+        <div style="background-color: var(--bg-warning); border: 1px solid var(--border-warning); color: var(--text-warning); padding: 0.65rem 0.85rem; border-radius: var(--radius-sm); font-size: 0.82rem; margin-bottom: 0.75rem; font-weight: 600;">
+          ⚠️ The label could not be read reliably. Please retake the image or check the original label manually.
+        </div>
+      {% endif %}
+
+      <div style="background-color: #f8fafc; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 0.85rem; max-height: 220px; overflow-y: auto; font-family: monospace; font-size: 0.82rem; color: var(--text-primary); white-space: pre-wrap;">{{ scan.ocr_raw_text }}</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Navigation Actions -->
+<div style="margin-top: 1.5rem; display: flex; justify-content: space-between;">
+  <a href="{{ url_for('main.scan') }}" class="btn btn-secondary">
+    <i data-lucide="arrow-left"></i> Scan Another Label
+  </a>
+  <a href="{{ url_for('main.history') }}" class="btn btn-primary">
+    <i data-lucide="list"></i> View All Scan History
+  </a>
+</div>
+{% endblock %}
