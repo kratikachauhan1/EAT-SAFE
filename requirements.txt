@@ -3,3 +3,4 @@ pytesseract
 opencv-python
 Pillow
 pytest
+gunicorn
