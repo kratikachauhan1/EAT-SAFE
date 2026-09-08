@@ -16,11 +16,14 @@
 
   <div class="app-shell">
     
-    <!-- LEFT SIDEBAR -->
+    <!-- LEFT SIDEBAR (Desktop / Tablet) -->
     <aside class="sidebar">
       <div class="sidebar-header">
-        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="EAT SAFE" class="sidebar-logo-img">
-        <div class="sidebar-brand-text">EAT <span>SAFE</span></div>
+        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="EAT SAFE Logo" class="sidebar-logo-img">
+        <div>
+          <div class="sidebar-brand-text">EAT <span>SAFE</span></div>
+          <div class="sidebar-brand-sub">SCAN • DETECT • STAY SAFE</div>
+        </div>
       </div>
 
       <nav class="sidebar-nav">
@@ -88,7 +91,8 @@
 
       <!-- Footer Disclaimer -->
       <footer class="footer-disclaimer">
-        <div>
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <img src="{{ url_for('static', filename='images/logo.png') }}" alt="EAT SAFE Logo" style="height: 24px; width: auto;">
           <strong>EAT SAFE</strong> — Assistive AI Food Safety Screening System
         </div>
         <div>

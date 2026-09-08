@@ -6,7 +6,7 @@
 {% block page_desc %}Upload a clear photo of the ingredients list or allergen information{% endblock %}
 
 {% block content %}
-<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem;">
+<div class="scan-grid">
 
   <!-- Column 1: Scanner Form -->
   <div class="saas-card">
@@ -45,7 +45,7 @@
         <img id="preview-img" src="" alt="Preview" style="max-width: 100%; max-height: 320px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle); display: block; margin: 0 auto;">
       </div>
 
-      <!-- Processing Step Indicator (Simulated Progress) -->
+      <!-- Processing Step Indicator -->
       <div id="processing-indicator" style="display: none; margin: 1.5rem 0; padding: 1rem 1.25rem; background-color: var(--primary-light); border: 1px solid var(--primary-border); border-radius: var(--radius-md);">
         <div style="font-size: 0.88rem; font-weight: 700; color: var(--primary); margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
           <i data-lucide="loader-2" class="spin" style="width: 18px; height: 18px;"></i> Processing label with EAT SAFE AI...
