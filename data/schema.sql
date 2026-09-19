@@ -13,7 +13,10 @@ CREATE TABLE IF NOT EXISTS allergens (
     allergen_id INTEGER PRIMARY KEY AUTOINCREMENT,
     category_code TEXT NOT NULL UNIQUE,
     category_name TEXT NOT NULL,
-    description TEXT
+    category_group TEXT DEFAULT 'Common',
+    description TEXT,
+    synonyms TEXT,
+    is_custom INTEGER DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS user_allergies (
@@ -22,6 +25,15 @@ CREATE TABLE IF NOT EXISTS user_allergies (
     PRIMARY KEY (user_id, allergen_id),
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
     FOREIGN KEY (allergen_id) REFERENCES allergens(allergen_id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS user_custom_allergens (
+    custom_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    term_name TEXT NOT NULL,
+    description TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS scans (

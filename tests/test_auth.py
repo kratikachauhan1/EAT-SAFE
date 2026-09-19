@@ -61,8 +61,12 @@ def test_registration_and_login(client):
     assert res.status_code == 200
     assert b"Welcome Back to EAT SAFE" in res.data or b"Sign in" in res.data
 
-    # TEST 11: Directly open protected URL while logged out -> redirect to Login
-    res = client.get('/', follow_redirects=False)
+    # Public Landing Page is accessible without login
+    res_public = client.get('/', follow_redirects=False)
+    assert res_public.status_code == 200
+
+    # TEST 11: Directly open protected URL (/profile) while logged out -> redirect to Login
+    res = client.get('/profile', follow_redirects=False)
     assert res.status_code == 302
     assert '/login' in res.location
 

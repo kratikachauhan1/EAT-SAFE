@@ -1,8 +1,8 @@
 from app.models import get_all_allergens
 
-def evaluate_personalisation(detected_items, user_allergy_ids, is_ocr_reliable=True, ocr_confidence=0.0):
+def evaluate_personalisation(detected_items, user_allergy_ids, is_ocr_reliable=True, ocr_confidence=0.0, user_custom_terms=None, ocr_raw_text=""):
     """
-    Intersects detected allergens with the user's active allergy profile IDs.
+    Intersects detected allergens with the user's active allergy profile IDs and custom monitored terms.
     Returns:
         personal_summary (dict): Categorized results, status flag, and explanation notes.
     """
@@ -44,6 +44,15 @@ def evaluate_personalisation(detected_items, user_allergy_ids, is_ocr_reliable=T
         else:
             other_detected_results.append(res_record)
 
+    # Check for custom user-monitored ingredient terms in label text
+    matched_custom_terms = []
+    if user_custom_terms and ocr_raw_text:
+        text_lower = ocr_raw_text.lower()
+        for custom_item in user_custom_terms:
+            t_name = custom_item.get('term_name', '') if isinstance(custom_item, dict) else str(custom_item)
+            if t_name and t_name.strip().lower() in text_lower:
+                matched_custom_terms.append(t_name.strip())
+
     # Determine overall status code and user-facing title
     if not is_ocr_reliable:
         overall_status = "UNREADABLE"
@@ -68,6 +77,14 @@ def evaluate_personalisation(detected_items, user_allergy_ids, is_ocr_reliable=T
         status_message = (
             f"Precautionary statements ('May contain') matching your allergy profile were detected: "
             f"{', '.join(sorted(set(w['category_name'] for w in user_precautionary_cautions)))}."
+        )
+    elif matched_custom_terms:
+        overall_status = "CAUTION"
+        status_color = "caution"
+        status_title = "Custom Monitored Ingredient Match Detected"
+        status_message = (
+            f"Ingredients matching your custom monitored terms were detected on this label: "
+            f"{', '.join(sorted(set(matched_custom_terms)))}."
         )
     elif other_detected_results:
         overall_status = "CLEAR_USER_SAFE"
@@ -95,6 +112,7 @@ def evaluate_personalisation(detected_items, user_allergy_ids, is_ocr_reliable=T
         'user_explicit_warnings': user_explicit_warnings,
         'user_precautionary_cautions': user_precautionary_cautions,
         'other_detected_results': other_detected_results,
+        'matched_custom_terms': matched_custom_terms,
         'all_detected_records': matched_user_results + other_detected_results,
         'user_selected_allergies': user_allergy_names,
         'disclaimer': (

@@ -2,7 +2,8 @@
   "categories": [
     {
       "code": "MILK",
-      "name": "Milk",
+      "name": "Milk & Dairy",
+      "group": "Dairy & Egg",
       "description": "Dairy products and milk derivatives including whey, casein, lactose, and milk solids.",
       "terms": [
         "milk",
@@ -33,8 +34,29 @@
       ]
     },
     {
+      "code": "EGG",
+      "name": "Egg",
+      "group": "Dairy & Egg",
+      "description": "Egg products, egg white, egg yolk, ovalbumin, and egg powder.",
+      "terms": [
+        "egg",
+        "eggs",
+        "egg powder",
+        "egg yolk",
+        "egg white",
+        "whole egg",
+        "albumin",
+        "ovalbumin",
+        "lysozyme",
+        "mayonnaise",
+        "lecithin (egg)",
+        "egg lecithin"
+      ]
+    },
+    {
       "code": "PEANUT",
       "name": "Peanut",
+      "group": "Nuts & Seeds",
       "description": "Peanuts and groundnut products.",
       "terms": [
         "peanut",
@@ -53,6 +75,7 @@
     {
       "code": "TREENUT",
       "name": "Tree Nuts",
+      "group": "Nuts & Seeds",
       "description": "Almonds, cashews, walnuts, pistachios, hazelnuts, pecans, macadamia, and Brazil nuts.",
       "terms": [
         "tree nut",
@@ -80,91 +103,43 @@
       ]
     },
     {
-      "code": "SOY",
-      "name": "Soy",
-      "description": "Soybeans, soya flour, soy lecithin, and soy protein derivatives.",
+      "code": "SESAME",
+      "name": "Sesame",
+      "group": "Nuts & Seeds",
+      "description": "Sesame seeds, sesame oil, tahini, and til derivatives.",
       "terms": [
-        "soy",
-        "soya",
-        "soybean",
-        "soybeans",
-        "soy lecithin",
-        "soya lecithin",
-        "soy protein",
-        "soya protein",
-        "soy sauce",
-        "soya sauce",
-        "tofu",
-        "edamame",
-        "soya flour",
-        "soy flour",
-        "textured vegetable protein",
-        "tvp"
+        "sesame",
+        "sesame seed",
+        "sesame seeds",
+        "sesame oil",
+        "tahini",
+        "til",
+        "gingelly",
+        "gingelly oil",
+        "benne seed"
       ]
     },
     {
-      "code": "EGG",
-      "name": "Egg",
-      "description": "Egg products, egg white, egg yolk, ovalbumin, and egg powder.",
+      "code": "MUSTARD",
+      "name": "Mustard",
+      "group": "Spices & Vegetables",
+      "description": "Mustard seeds, mustard powder, mustard oil, and rai derivatives.",
       "terms": [
-        "egg",
-        "eggs",
-        "egg powder",
-        "egg yolk",
-        "egg white",
-        "whole egg",
-        "albumin",
-        "ovalbumin",
-        "lysozyme",
-        "mayonnaise",
-        "lecithin (egg)",
-        "egg lecithin"
-      ]
-    },
-    {
-      "code": "FISH",
-      "name": "Fish",
-      "description": "All species of fish and fish gelatin/oil derivatives.",
-      "terms": [
-        "fish",
-        "fishes",
-        "fish oil",
-        "fish gelatin",
-        "fish sauce",
-        "anchovy",
-        "anchovies",
-        "cod",
-        "salmon",
-        "tuna",
-        "trout",
-        "mackerel",
-        "sardine",
-        "sardines",
-        "surimi"
-      ]
-    },
-    {
-      "code": "CRUSTACEAN",
-      "name": "Crustaceans",
-      "description": "Crustaceans including prawns, shrimps, crabs, lobsters, and krill.",
-      "terms": [
-        "crustacean",
-        "crustaceans",
-        "prawn",
-        "prawns",
-        "shrimp",
-        "shrimps",
-        "crab",
-        "crabs",
-        "lobster",
-        "lobsters",
-        "krill",
-        "shellfish"
+        "mustard",
+        "mustard seed",
+        "mustard seeds",
+        "mustard powder",
+        "mustard oil",
+        "mustard paste",
+        "rai",
+        "sarson",
+        "sarson oil"
       ]
     },
     {
       "code": "GLUTEN",
       "name": "Cereals containing Gluten",
+      "group": "Grains & Legumes",
       "description": "Wheat, rye, barley, oats, spelt, kamut, maida, atta, semolina, and malt.",
       "terms": [
         "gluten",
@@ -193,9 +168,147 @@
       ]
     },
     {
+      "code": "SOY",
+      "name": "Soy",
+      "group": "Grains & Legumes",
+      "description": "Soybeans, soya flour, soy lecithin, and soy protein derivatives.",
+      "terms": [
+        "soy",
+        "soya",
+        "soybean",
+        "soybeans",
+        "soy lecithin",
+        "soya lecithin",
+        "soy protein",
+        "soya protein",
+        "soy sauce",
+        "soya sauce",
+        "tofu",
+        "edamame",
+        "soya flour",
+        "soy flour",
+        "textured vegetable protein",
+        "tvp"
+      ]
+    },
+    {
+      "code": "LUPIN",
+      "name": "Lupin",
+      "group": "Grains & Legumes",
+      "description": "Lupin seeds, lupin flour, and lupin protein concentrates.",
+      "terms": [
+        "lupin",
+        "lupine",
+        "lupin flour",
+        "lupin seed",
+        "lupin beans",
+        "lupin protein"
+      ]
+    },
+    {
+      "code": "CORN",
+      "name": "Corn & Maize",
+      "group": "Grains & Legumes",
+      "description": "Corn, maize, cornstarch, corn syrup, corn flour, and corn oil.",
+      "terms": [
+        "corn",
+        "maize",
+        "cornstarch",
+        "corn starch",
+        "corn syrup",
+        "high fructose corn syrup",
+        "corn flour",
+        "corn oil",
+        "makka",
+        "cornmeal",
+        "polenta"
+      ]
+    },
+    {
+      "code": "FISH",
+      "name": "Fish",
+      "group": "Seafood",
+      "description": "All species of fish and fish gelatin/oil derivatives.",
+      "terms": [
+        "fish",
+        "fishes",
+        "fish oil",
+        "fish gelatin",
+        "fish sauce",
+        "anchovy",
+        "anchovies",
+        "cod",
+        "salmon",
+        "tuna",
+        "trout",
+        "mackerel",
+        "sardine",
+        "sardines",
+        "surimi"
+      ]
+    },
+    {
+      "code": "CRUSTACEAN",
+      "name": "Crustaceans",
+      "group": "Seafood",
+      "description": "Crustaceans including prawns, shrimps, crabs, lobsters, and krill.",
+      "terms": [
+        "crustacean",
+        "crustaceans",
+        "prawn",
+        "prawns",
+        "shrimp",
+        "shrimps",
+        "crab",
+        "crabs",
+        "lobster",
+        "lobsters",
+        "krill",
+        "shellfish"
+      ]
+    },
+    {
+      "code": "MOLLUSC",
+      "name": "Molluscs",
+      "group": "Seafood",
+      "description": "Molluscs including oysters, mussels, clams, squid, octopus, and snails.",
+      "terms": [
+        "mollusc",
+        "molluscs",
+        "squid",
+        "calamari",
+        "octopus",
+        "oyster",
+        "oysters",
+        "mussel",
+        "mussels",
+        "clam",
+        "clams",
+        "scallop",
+        "scallops",
+        "snail",
+        "escargot"
+      ]
+    },
+    {
+      "code": "CELERY",
+      "name": "Celery",
+      "group": "Spices & Vegetables",
+      "description": "Celery stalks, leaves, celery seeds, celery salt, and celeriac.",
+      "terms": [
+        "celery",
+        "celery stalk",
+        "celery seed",
+        "celery seeds",
+        "celery salt",
+        "celeriac"
+      ]
+    },
+    {
       "code": "SULPHITE",
       "name": "Sulphites",
-      "description": "Sulphites and sulfur dioxide at concentrations > 10mg/kg or 10mg/L.",
+      "group": "Additives & Preservatives",
+      "description": "Sulphites and sulfur dioxide preservatives at concentrations > 10mg/kg or 10mg/L.",
       "terms": [
         "sulphite",
         "sulphites",
@@ -217,6 +330,36 @@
         "e226",
         "e227",
         "e228"
+      ]
+    },
+    {
+      "code": "MSG",
+      "name": "Monosodium Glutamate (MSG)",
+      "group": "Additives & Preservatives",
+      "description": "Flavor enhancer Monosodium Glutamate (E621) and hydrolyzed proteins.",
+      "terms": [
+        "msg",
+        "monosodium glutamate",
+        "e621",
+        "glutamate",
+        "ajinomoto",
+        "hydrolyzed vegetable protein",
+        "hvp",
+        "autolyzed yeast"
+      ]
+    },
+    {
+      "code": "PALMOIL",
+      "name": "Palm Oil",
+      "group": "Additives & Preservatives",
+      "description": "Palm oil, palm kernel oil, and palmitate derivatives.",
+      "terms": [
+        "palm oil",
+        "palm kernel oil",
+        "palmitate",
+        "palm fruit oil",
+        "palm olein",
+        "palm stearin"
       ]
     }
   ]

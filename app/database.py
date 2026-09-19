@@ -96,7 +96,7 @@ def close_db(e=None):
 
 
 def init_db():
-    """Initialize database schema and seed FSSAI allergen categories from KB JSON."""
+    """Initialize database schema and seed FSSAI allergen categories & groups from KB JSON."""
     conn = get_db()
     cursor = conn.cursor()
     pg = is_postgres()
@@ -116,13 +116,24 @@ def init_db():
             allergen_id SERIAL PRIMARY KEY,
             category_code VARCHAR(100) NOT NULL UNIQUE,
             category_name VARCHAR(255) NOT NULL,
-            description TEXT
+            category_group VARCHAR(100) DEFAULT 'Common',
+            description TEXT,
+            synonyms TEXT,
+            is_custom INTEGER DEFAULT 0
         );
 
         CREATE TABLE IF NOT EXISTS user_allergies (
             user_id INTEGER NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
             allergen_id INTEGER NOT NULL REFERENCES allergens(allergen_id) ON DELETE CASCADE,
             PRIMARY KEY (user_id, allergen_id)
+        );
+
+        CREATE TABLE IF NOT EXISTS user_custom_allergens (
+            custom_id SERIAL PRIMARY KEY,
+            user_id INTEGER NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+            term_name VARCHAR(255) NOT NULL,
+            description TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
 
         CREATE TABLE IF NOT EXISTS scans (
@@ -152,42 +163,78 @@ def init_db():
 
         # Migration logic for SQLite
         cursor.execute("PRAGMA table_info(users)")
-        existing_columns = [col[1] for col in cursor.fetchall()]
+        existing_user_cols = [col[1] for col in cursor.fetchall()]
         
-        if 'full_name' not in existing_columns:
+        if 'full_name' not in existing_user_cols:
             try:
                 cursor.execute("ALTER TABLE users ADD COLUMN full_name TEXT")
             except sqlite3.OperationalError:
                 pass
 
-        if 'password_hash' not in existing_columns:
+        if 'password_hash' not in existing_user_cols:
             try:
                 cursor.execute("ALTER TABLE users ADD COLUMN password_hash TEXT")
             except sqlite3.OperationalError:
                 pass
+
+        cursor.execute("PRAGMA table_info(allergens)")
+        existing_alg_cols = [col[1] for col in cursor.fetchall()]
+
+        if 'category_group' not in existing_alg_cols:
+            try:
+                cursor.execute("ALTER TABLE allergens ADD COLUMN category_group TEXT DEFAULT 'Common'")
+            except sqlite3.OperationalError:
+                pass
+
+        if 'synonyms' not in existing_alg_cols:
+            try:
+                cursor.execute("ALTER TABLE allergens ADD COLUMN synonyms TEXT")
+            except sqlite3.OperationalError:
+                pass
+
+        if 'is_custom' not in existing_alg_cols:
+            try:
+                cursor.execute("ALTER TABLE allergens ADD COLUMN is_custom INTEGER DEFAULT 0")
+            except sqlite3.OperationalError:
+                pass
         
-    # Seed FSSAI Allergens from KB JSON
+    # Seed/Update Allergens from KB JSON
     if os.path.exists(KB_PATH):
         with open(KB_PATH, 'r', encoding='utf-8') as f:
             kb_data = json.load(f)
             
         for category in kb_data.get('categories', []):
+            code = category['code']
+            name = category['name']
+            group = category.get('group', 'Common')
+            desc = category.get('description', '')
+            synonyms_str = ", ".join(category.get('terms', []))
+
             if pg:
                 cursor.execute(
                     """
-                    INSERT INTO allergens (category_code, category_name, description)
-                    VALUES (%s, %s, %s)
-                    ON CONFLICT (category_code) DO NOTHING
+                    INSERT INTO allergens (category_code, category_name, category_group, description, synonyms, is_custom)
+                    VALUES (%s, %s, %s, %s, %s, 0)
+                    ON CONFLICT (category_code) DO UPDATE 
+                    SET category_name = EXCLUDED.category_name,
+                        category_group = EXCLUDED.category_group,
+                        description = EXCLUDED.description,
+                        synonyms = EXCLUDED.synonyms
                     """,
-                    (category['code'], category['name'], category.get('description', ''))
+                    (code, name, group, desc, synonyms_str)
                 )
             else:
                 cursor.execute(
                     """
-                    INSERT OR IGNORE INTO allergens (category_code, category_name, description)
-                    VALUES (?, ?, ?)
+                    INSERT INTO allergens (category_code, category_name, category_group, description, synonyms, is_custom)
+                    VALUES (?, ?, ?, ?, ?, 0)
+                    ON CONFLICT(category_code) DO UPDATE
+                    SET category_name = excluded.category_name,
+                        category_group = excluded.category_group,
+                        description = excluded.description,
+                        synonyms = excluded.synonyms
                     """,
-                    (category['code'], category['name'], category.get('description', ''))
+                    (code, name, group, desc, synonyms_str)
                 )
             
     conn.commit()

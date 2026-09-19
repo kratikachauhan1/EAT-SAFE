@@ -2,41 +2,254 @@
 
 {% block title %}Allergy Profile - EAT SAFE AI{% endblock %}
 
-{% block page_title %}Allergy Profile Management{% endblock %}
-{% block page_desc %}Select the allergens you want EAT SAFE to monitor during every scan{% endblock %}
+{% block page_title %}Personal Allergy Profile{% endblock %}
+{% block page_desc %}Configure your monitored allergens and custom ingredient terms for personalized scan screening{% endblock %}
 
 {% block content %}
-<div class="saas-card">
-  <div class="saas-card-header">
-    <h3 class="saas-card-title">
-      <i data-lucide="user-check"></i> Monitored FSSAI Allergen Categories
-    </h3>
-    <span style="font-size: 0.85rem; color: var(--text-secondary);">Select all that apply</span>
+<div style="display: flex; flex-direction: column; gap: 1.5rem;">
+
+  <!-- Active Monitored Allergens Overview Banner -->
+  <div class="saas-card" style="border-left: 4px solid var(--primary);">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 0.85rem;">
+      <div>
+        <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 0.5rem;">
+          <i data-lucide="shield-check" style="color: var(--primary);"></i> Currently Monitored Allergens & Ingredients
+        </h3>
+        <p style="font-size: 0.88rem; color: var(--text-secondary); margin-top: 0.2rem;">
+          Every food label scan will automatically screen extracted ingredient text against these active preferences.
+        </p>
+      </div>
+      <div class="badge badge-primary" style="font-size: 0.9rem; padding: 0.4rem 0.85rem; font-weight: 700;">
+        {{ (user_allergy_ids | length) + (custom_allergens | length) }} Active Monitored
+      </div>
+    </div>
+
+    <!-- Active Allergen Chips -->
+    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; min-height: 38px;">
+      {% set active_found = false %}
+      {% for allergen in allergens %}
+        {% if allergen.allergen_id in user_allergy_ids %}
+          {% set active_found = true %}
+          <div style="display: inline-flex; align-items: center; gap: 0.4rem; background: var(--primary-light); border: 1px solid var(--primary-border); color: var(--primary); padding: 0.35rem 0.75rem; border-radius: var(--radius-full); font-size: 0.85rem; font-weight: 600;">
+            <span>{{ allergen.category_name }}</span>
+            <button type="button" onclick="quickRemove('{{ allergen.allergen_id }}')" style="background: none; border: none; cursor: pointer; color: var(--primary); font-size: 1.1rem; line-height: 1; padding: 0; margin-left: 0.2rem;" title="Remove">&times;</button>
+          </div>
+        {% endif %}
+      {% endfor %}
+
+      {% for custom in custom_allergens %}
+        <div style="display: inline-flex; align-items: center; gap: 0.4rem; background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.3); color: #b45309; padding: 0.35rem 0.75rem; border-radius: var(--radius-full); font-size: 0.85rem; font-weight: 600;" title="User Custom Monitor">
+          <span>{{ custom.term_name }} <small style="font-weight: 400; opacity: 0.8;">(Custom)</small></span>
+          <form action="{{ url_for('main.delete_custom_allergen', custom_id=custom.custom_id) }}" method="POST" style="display: inline;">
+            <button type="submit" style="background: none; border: none; cursor: pointer; color: #b45309; font-size: 1.1rem; line-height: 1; padding: 0;" title="Delete Custom Term">&times;</button>
+          </form>
+        </div>
+      {% endfor %}
+
+      {% if not user_allergy_ids and not custom_allergens %}
+        <span style="font-size: 0.88rem; color: var(--text-tertiary); italic;">No active allergens selected yet. Select from the categories below or add custom terms.</span>
+      {% endif %}
+    </div>
   </div>
 
-  <p style="font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 1.25rem;">
-    EAT SAFE will intersect these active allergy categories against OCR extracted ingredient text and precautionary declarations.
-  </p>
+  <!-- Main Profile Controls: Search, Filter Tabs & Custom Term Form -->
+  <div class="saas-card">
+    
+    <!-- Controls Header & Search -->
+    <div style="display: flex; flex-direction: column; gap: 1.25rem; margin-bottom: 1.5rem;">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <div>
+          <h3 class="saas-card-title">
+            <i data-lucide="database"></i> Allergen Knowledge Base & Monitoring List
+          </h3>
+          <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.2rem;">
+            Search or filter system allergens, or add your own custom ingredient terms to monitor.
+          </p>
+        </div>
 
-  <form action="{{ url_for('main.profile') }}" method="POST">
-    <div class="allergy-selection-grid">
-      {% for allergen in allergens %}
-        <label class="allergy-card-select {% if allergen.allergen_id in user_allergy_ids %}selected{% endif %}">
-          <input type="checkbox" name="allergens" value="{{ allergen.allergen_id }}" {% if allergen.allergen_id in user_allergy_ids %}checked{% endif %}>
-          <div style="display: flex; flex-direction: column;">
-            <span style="font-weight: 700; font-size: 0.95rem; color: var(--text-primary);">{{ allergen.category_name }}</span>
-            <span style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.2rem;">{{ allergen.description }}</span>
-          </div>
-        </label>
-      {% endfor %}
+        <button type="button" class="btn btn-secondary btn-sm" onclick="toggleCustomForm()">
+          <i data-lucide="plus-circle"></i> Add Custom Ingredient Monitor
+        </button>
+      </div>
+
+      <!-- Custom Monitored Term Collapsible Form -->
+      <div id="custom-term-box" style="display: none; padding: 1.25rem; background: var(--bg-page); border-radius: var(--radius-md); border: 1px solid var(--border-medium);">
+        <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.35rem;">
+          Add User Custom Ingredient Monitor
+        </h4>
+        <p style="font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 0.85rem;">
+          Monitor specific ingredient terms (e.g., <em>"Palm Oil", "FD&C Yellow 5", "Coconut"</em>). Custom terms are tracked specifically for your account.
+        </p>
+
+        <form action="{{ url_for('main.add_custom_allergen') }}" method="POST" style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+          <input type="text" name="term_name" required placeholder="Enter ingredient or term name..." style="flex: 1; min-width: 220px; padding: 0.6rem 0.85rem; font-size: 0.9rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); outline: none;">
+          <input type="text" name="description" placeholder="Optional description or note..." style="flex: 1.5; min-width: 240px; padding: 0.6rem 0.85rem; font-size: 0.9rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); outline: none;">
+          <button type="submit" class="btn btn-primary btn-sm">Save Custom Term</button>
+        </form>
+      </div>
+
+      <!-- Live Search Box -->
+      <div style="position: relative;">
+        <input type="text" id="allergen-search-input" placeholder="Search by allergen name or ingredient (e.g., sesame, whey, badam, gluten, sulfur)..." style="width: 100%; padding: 0.75rem 1rem 0.75rem 2.5rem; font-size: 0.95rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); outline: none; font-family: inherit; box-shadow: var(--shadow-sm);">
+        <i data-lucide="search" style="position: absolute; left: 0.85rem; top: 50%; transform: translateY(-50%); width: 18px; height: 18px; color: var(--text-tertiary);"></i>
+      </div>
+
+      <!-- Group Filter Tabs -->
+      <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;" id="group-filter-container">
+        <button type="button" class="btn btn-secondary btn-sm group-tab active" data-group="all">All Categories</button>
+        <button type="button" class="btn btn-secondary btn-sm group-tab" data-group="Dairy & Egg">Dairy & Egg</button>
+        <button type="button" class="btn btn-secondary btn-sm group-tab" data-group="Nuts & Seeds">Nuts & Seeds</button>
+        <button type="button" class="btn btn-secondary btn-sm group-tab" data-group="Grains & Legumes">Grains & Legumes</button>
+        <button type="button" class="btn btn-secondary btn-sm group-tab" data-group="Seafood">Seafood</button>
+        <button type="button" class="btn btn-secondary btn-sm group-tab" data-group="Spices & Vegetables">Spices & Vegetables</button>
+        <button type="button" class="btn btn-secondary btn-sm group-tab" data-group="Additives & Preservatives">Additives & Preservatives</button>
+      </div>
     </div>
 
-    <div style="margin-top: 1.5rem; display: flex; gap: 0.75rem; justify-content: flex-end; border-top: 1px solid var(--border-subtle); padding-top: 1.25rem;">
-      <a href="{{ url_for('main.index') }}" class="btn btn-secondary">Cancel</a>
-      <button type="submit" class="btn btn-primary btn-lg">
-        <i data-lucide="save"></i> Save Allergy Profile
-      </button>
-    </div>
-  </form>
+    <!-- Main Profile Save Form -->
+    <form action="{{ url_for('main.profile') }}" method="POST" id="profile-form">
+      
+      <!-- Allergen Cards Grid -->
+      <div class="allergy-selection-grid" id="allergen-cards-grid">
+        {% for allergen in allergens %}
+          <label class="allergy-card-select {% if allergen.allergen_id in user_allergy_ids %}selected{% endif %}" 
+                 data-id="{{ allergen.allergen_id }}" 
+                 data-name="{{ allergen.category_name | lower }}" 
+                 data-code="{{ allergen.category_code | lower }}" 
+                 data-group="{{ allergen.category_group or 'Common' }}" 
+                 data-synonyms="{{ (allergen.synonyms or '') | lower }}" 
+                 data-desc="{{ (allergen.description or '') | lower }}">
+            
+            <input type="checkbox" name="allergens" id="checkbox-{{ allergen.allergen_id }}" value="{{ allergen.allergen_id }}" {% if allergen.allergen_id in user_allergy_ids %}checked{% endif %} style="margin-top: 3px;">
+            
+            <div style="display: flex; flex-direction: column; width: 100%;">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; margin-bottom: 0.35rem;">
+                <span style="font-weight: 700; font-size: 0.95rem; color: var(--text-primary);">{{ allergen.category_name }}</span>
+                <span class="badge badge-neutral" style="font-size: 0.72rem; text-transform: uppercase;">{{ allergen.category_group or 'Common' }}</span>
+              </div>
+
+              <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.4rem; line-height: 1.4;">{{ allergen.description }}</p>
+
+              {% if allergen.synonyms %}
+                <div style="font-size: 0.76rem; color: var(--text-tertiary); background: var(--bg-page); padding: 0.35rem 0.5rem; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">
+                  <strong style="color: var(--text-secondary);">Synonyms/Terms:</strong> {{ allergen.synonyms[:90] }}{% if allergen.synonyms | length > 90 %}...{% endif %}
+                </div>
+              {% endif %}
+            </div>
+          </label>
+        {% endfor %}
+      </div>
+
+      <!-- Empty Filter State -->
+      <div id="no-search-results" style="display: none; text-align: center; padding: 2.5rem 1rem; background: var(--bg-page); border-radius: var(--radius-md); border: 1px dashed var(--border-medium); margin-top: 1rem;">
+        <i data-lucide="search-x" style="width: 36px; height: 36px; color: var(--text-tertiary); margin-bottom: 0.5rem;"></i>
+        <h4 style="font-size: 1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.25rem;">No matching allergens found</h4>
+        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">Try searching for a different term or add a Custom Monitored Term above.</p>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="clearSearch()">Clear Search Filter</button>
+      </div>
+
+      <!-- Action Buttons -->
+      <div style="margin-top: 2rem; display: flex; gap: 1rem; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-subtle); padding-top: 1.5rem; flex-wrap: wrap;">
+        <span style="font-size: 0.85rem; color: var(--text-secondary);" id="selected-count-label">
+          <strong>{{ user_allergy_ids | length }}</strong> system allergen categories selected
+        </span>
+
+        <div style="display: flex; gap: 0.75rem;">
+          <a href="{{ url_for('main.index') }}" class="btn btn-secondary">Cancel</a>
+          <button type="submit" class="btn btn-primary btn-lg">
+            <i data-lucide="save"></i> Save Profile Preferences
+          </button>
+        </div>
+      </div>
+
+    </form>
+  </div>
+
 </div>
+
+<script>
+  function toggleCustomForm() {
+    const box = document.getElementById('custom-term-box');
+    if (box) {
+      box.style.display = (box.style.display === 'none') ? 'block' : 'none';
+    }
+  }
+
+  function quickRemove(allergenId) {
+    const cb = document.getElementById('checkbox-' + allergenId);
+    if (cb) {
+      cb.checked = false;
+      document.getElementById('profile-form').submit();
+    }
+  }
+
+  function clearSearch() {
+    const input = document.getElementById('allergen-search-input');
+    if (input) {
+      input.value = '';
+      filterCards();
+    }
+  }
+
+  // Live Client-Side Filtering
+  const searchInput = document.getElementById('allergen-search-input');
+  const groupTabs = document.querySelectorAll('.group-tab');
+  const cards = document.querySelectorAll('.allergy-card-select');
+  const noResults = document.getElementById('no-search-results');
+  let activeGroup = 'all';
+
+  function filterCards() {
+    const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
+    let visibleCount = 0;
+
+    cards.forEach(card => {
+      const name = card.getAttribute('data-name') || '';
+      const code = card.getAttribute('data-code') || '';
+      const group = card.getAttribute('data-group') || '';
+      const synonyms = card.getAttribute('data-synonyms') || '';
+      const desc = card.getAttribute('data-desc') || '';
+
+      const matchesGroup = (activeGroup === 'all') || (group.toLowerCase() === activeGroup.toLowerCase());
+      const matchesQuery = !query || name.includes(query) || code.includes(query) || synonyms.includes(query) || desc.includes(query);
+
+      if (matchesGroup && matchesQuery) {
+        card.style.display = 'flex';
+        visibleCount++;
+      } else {
+        card.style.display = 'none';
+      }
+    });
+
+    if (noResults) {
+      noResults.style.display = (visibleCount === 0) ? 'block' : 'none';
+    }
+  }
+
+  if (searchInput) {
+    searchInput.addEventListener('input', filterCards);
+  }
+
+  groupTabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      groupTabs.forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      activeGroup = tab.getAttribute('data-group');
+      filterCards();
+    });
+  });
+
+  // Toggle card visual selection state
+  cards.forEach(card => {
+    const checkbox = card.querySelector('input[type="checkbox"]');
+    if (checkbox) {
+      checkbox.addEventListener('change', () => {
+        if (checkbox.checked) {
+          card.classList.add('selected');
+        } else {
+          card.classList.remove('selected');
+        }
+      });
+    }
+  });
+</script>
 {% endblock %}

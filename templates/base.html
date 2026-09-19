@@ -16,37 +16,58 @@
 
   <div class="app-shell">
     
-    <!-- LEFT SIDEBAR (Desktop / Tablet) -->
-    <aside class="sidebar">
+    <!-- LEFT SIDEBAR (Desktop / Tablet / Mobile Drawer) -->
+    <aside class="sidebar" id="app-sidebar">
       <div class="sidebar-header">
-        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="EAT SAFE Logo" class="sidebar-logo-img">
-        <div>
-          <div class="sidebar-brand-text">EAT <span>SAFE</span></div>
-          <div class="sidebar-brand-sub">SCAN • DETECT • STAY SAFE</div>
-        </div>
+        <a href="{{ url_for('main.index') }}" style="display: flex; align-items: center; gap: 0.75rem; text-decoration: none; color: inherit;">
+          <img src="{{ url_for('static', filename='images/logo.png') }}" alt="EAT SAFE Logo" class="sidebar-logo-img">
+          <div>
+            <div class="sidebar-brand-text">EAT <span>SAFE</span></div>
+            <div class="sidebar-brand-sub">SCAN • DETECT • STAY SAFE</div>
+          </div>
+        </a>
       </div>
 
       <nav class="sidebar-nav">
-        <a href="{{ url_for('main.index') }}" class="sidebar-link {% if request.endpoint == 'main.index' %}active{% endif %}">
-          <i data-lucide="layout-dashboard"></i>
-          <span>Dashboard</span>
-        </a>
-        <a href="{{ url_for('main.scan') }}" class="sidebar-link {% if request.endpoint == 'main.scan' %}active{% endif %}">
-          <i data-lucide="scan-line"></i>
-          <span>Scan Label</span>
-        </a>
-        <a href="{{ url_for('main.profile') }}" class="sidebar-link {% if request.endpoint == 'main.profile' %}active{% endif %}">
-          <i data-lucide="shield-check"></i>
-          <span>Allergy Profile</span>
-        </a>
-        <a href="{{ url_for('main.history') }}" class="sidebar-link {% if request.endpoint == 'main.history' %}active{% endif %}">
-          <i data-lucide="history"></i>
-          <span>Scan History</span>
-        </a>
-        <a href="{{ url_for('main.settings') }}" class="sidebar-link {% if request.endpoint in ['main.settings', 'main.update_profile', 'main.change_password'] %}active{% endif %}">
-          <i data-lucide="settings"></i>
-          <span>Settings</span>
-        </a>
+        {% if current_user %}
+          <a href="{{ url_for('main.index') }}" class="sidebar-link {% if request.endpoint == 'main.index' %}active{% endif %}">
+            <i data-lucide="layout-dashboard"></i>
+            <span>Dashboard</span>
+          </a>
+          <a href="{{ url_for('main.scan') }}" class="sidebar-link {% if request.endpoint == 'main.scan' %}active{% endif %}">
+            <i data-lucide="scan-line"></i>
+            <span>Scan Label</span>
+          </a>
+          <a href="{{ url_for('main.profile') }}" class="sidebar-link {% if request.endpoint in ['main.profile', 'main.profile_custom'] %}active{% endif %}">
+            <i data-lucide="shield-check"></i>
+            <span>Allergy Profile</span>
+          </a>
+          <a href="{{ url_for('main.history') }}" class="sidebar-link {% if request.endpoint == 'main.history' %}active{% endif %}">
+            <i data-lucide="history"></i>
+            <span>Scan History</span>
+          </a>
+          <a href="{{ url_for('main.settings') }}" class="sidebar-link {% if request.endpoint in ['main.settings', 'main.update_profile', 'main.change_password'] %}active{% endif %}">
+            <i data-lucide="settings"></i>
+            <span>Settings</span>
+          </a>
+        {% else %}
+          <a href="{{ url_for('main.index') }}" class="sidebar-link {% if request.endpoint == 'main.index' %}active{% endif %}">
+            <i data-lucide="home"></i>
+            <span>Home</span>
+          </a>
+          <a href="{{ url_for('main.scan') }}" class="sidebar-link {% if request.endpoint == 'main.scan' %}active{% endif %}">
+            <i data-lucide="scan"></i>
+            <span>Scan Food Label</span>
+          </a>
+          <a href="{{ url_for('main.login') }}" class="sidebar-link {% if request.endpoint == 'main.login' %}active{% endif %}">
+            <i data-lucide="log-in"></i>
+            <span>Sign In</span>
+          </a>
+          <a href="{{ url_for('main.register') }}" class="sidebar-link {% if request.endpoint == 'main.register' %}active{% endif %}">
+            <i data-lucide="user-plus"></i>
+            <span>Create Account</span>
+          </a>
+        {% endif %}
       </nav>
 
       {% if current_user %}
@@ -64,6 +85,12 @@
             <i data-lucide="log-out" style="width: 18px; height: 18px;"></i>
           </a>
         </div>
+      {% else %}
+        <div class="sidebar-footer" style="flex-direction: column; gap: 0.5rem; align-items: stretch;">
+          <a href="{{ url_for('main.register') }}" class="btn btn-primary btn-sm" style="text-align: center;">
+            <i data-lucide="user-plus"></i> Free Account
+          </a>
+        </div>
       {% endif %}
     </aside>
 
@@ -72,10 +99,16 @@
       
       <!-- Top Header Bar -->
       <header class="top-header">
-        <div class="header-title-block">
-          <h1 class="header-page-title">{% block page_title %}Dashboard{% endblock %}</h1>
-          <p class="header-description">{% block page_desc %}AI-assisted food label screening & personalized allergen detection{% endblock %}</p>
+        <div style="display: flex; align-items: center; gap: 1rem;">
+          <button type="button" class="btn btn-secondary btn-sm mobile-menu-toggle" id="mobile-toggle-btn" aria-label="Toggle Navigation Menu">
+            <i data-lucide="menu" style="width: 18px; height: 18px;"></i>
+          </button>
+          <div class="header-title-block">
+            <h1 class="header-page-title">{% block page_title %}Dashboard{% endblock %}</h1>
+            <p class="header-description">{% block page_desc %}AI-assisted food label screening & personalized allergen detection{% endblock %}</p>
+          </div>
         </div>
+
         <div style="display: flex; align-items: center; gap: 0.75rem;">
           <a href="{{ url_for('main.scan') }}" class="btn btn-primary btn-sm">
             <i data-lucide="camera" style="width: 15px; height: 15px;"></i> Scan Food Label
@@ -83,6 +116,10 @@
           {% if current_user %}
             <a href="{{ url_for('main.logout') }}" class="btn btn-secondary btn-sm" title="Sign Out">
               <i data-lucide="log-out" style="width: 15px; height: 15px;"></i> Logout
+            </a>
+          {% else %}
+            <a href="{{ url_for('main.login') }}" class="btn btn-secondary btn-sm">
+              <i data-lucide="log-in" style="width: 15px; height: 15px;"></i> Sign In
             </a>
           {% endif %}
         </div>
@@ -105,7 +142,7 @@
 
       <!-- Footer Disclaimer -->
       <footer class="footer-disclaimer">
-        <div style="display: flex; align-items: center; gap: 0.5rem;">
+        <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
           <img src="{{ url_for('static', filename='images/logo.png') }}" alt="EAT SAFE Logo" style="height: 24px; width: auto;">
           <strong>EAT SAFE</strong> — Assistive AI Food Safety Screening System
         </div>
@@ -121,6 +158,18 @@
   <script src="{{ url_for('static', filename='js/main.js') }}"></script>
   <script>
     lucide.createIcons();
+    
+    // Mobile navigation toggle
+    const toggleBtn = document.getElementById('mobile-toggle-btn');
+    const sidebar = id => document.getElementById('app-sidebar');
+    if (toggleBtn) {
+      toggleBtn.addEventListener('click', () => {
+        const sb = sidebar();
+        if (sb) {
+          sb.classList.toggle('mobile-open');
+        }
+      });
+    }
   </script>
 </body>
 </html>
