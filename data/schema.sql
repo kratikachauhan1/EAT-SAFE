@@ -1,9 +1,11 @@
--- SQLite Schema for Personalised Allergen Detection App
+-- SQLite Schema for Personalised Allergen Detection App (EAT SAFE)
 
 CREATE TABLE IF NOT EXISTS users (
     user_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    full_name TEXT,
     username TEXT NOT NULL UNIQUE,
-    email TEXT,
+    email TEXT UNIQUE NOT NULL,
+    password_hash TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

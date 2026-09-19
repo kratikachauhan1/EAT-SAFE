@@ -2,7 +2,7 @@ from app.models import get_all_allergens
 
 def evaluate_personalisation(detected_items, user_allergy_ids, is_ocr_reliable=True, ocr_confidence=0.0):
     """
-    Intersects detected allergens with the user's allergy profile IDs.
+    Intersects detected allergens with the user's active allergy profile IDs.
     Returns:
         personal_summary (dict): Categorized results, status flag, and explanation notes.
     """
@@ -56,7 +56,7 @@ def evaluate_personalisation(detected_items, user_allergy_ids, is_ocr_reliable=T
     elif user_explicit_warnings:
         overall_status = "DANGER"
         status_color = "danger"
-        status_title = "PERSONALALLERGEN WARNING DETECTED!"
+        status_title = "PERSONAL ALLERGEN WARNING DETECTED!"
         status_message = (
             f"Explicit ingredients matching your personal allergy profile were found on this label: "
             f"{', '.join(sorted(set(w['category_name'] for w in user_explicit_warnings)))}."
@@ -72,16 +72,16 @@ def evaluate_personalisation(detected_items, user_allergy_ids, is_ocr_reliable=T
     elif other_detected_results:
         overall_status = "CLEAR_USER_SAFE"
         status_color = "info"
-        status_title = "No Selected Allergens Detected"
+        status_title = "No Monitored Allergen Detected for Your Profile"
         status_message = (
-            "None of your selected personal allergens were detected in the readable label text. "
-            "However, other allergens were found on the product label."
+            "No monitored allergen matching your active profile was detected in the scanned label text. "
+            "However, other allergen categories were present on the product label."
         )
     else:
         overall_status = "NO_ALLERGENS_FOUND"
         status_color = "success"
-        status_title = "No Allergens Identified"
-        status_message = "No major FSSAI allergen terms were identified in the scanned label text."
+        status_title = "No Monitored Allergen Identified"
+        status_message = "No monitored FSSAI allergen terms were detected in the scanned label text."
 
     user_allergy_names = [category_id_to_name.get(aid, "Unknown") for aid in user_allergy_ids]
 
@@ -98,8 +98,8 @@ def evaluate_personalisation(detected_items, user_allergy_ids, is_ocr_reliable=T
         'all_detected_records': matched_user_results + other_detected_results,
         'user_selected_allergies': user_allergy_names,
         'disclaimer': (
-            "IMPORTANT SAFETY DISCLAIMER: Personalised Allergen Detection is an assistive screening aid "
-            "and not a medical diagnostic tool or guarantee of 100% safety. "
+            "IMPORTANT SAFETY DISCLAIMER: EATSAFE is an assistive label-screening aid and not a medical diagnostic tool "
+            "or guarantee of food safety. Results depend on the text successfully extracted from the label. "
             "Always inspect the physical packaging manually before consumption."
         )
     }

@@ -1,7 +1,7 @@
 import os
 from app.database import init_db
 from app.models import (
-    get_default_user, get_all_allergens, get_user_allergy_ids,
+    create_user, get_user_by_username, get_all_allergens, get_user_allergy_ids,
     update_user_allergies, save_scan, save_detection_results,
     get_scan_details, get_scan_history
 )
@@ -13,8 +13,11 @@ def test_end_to_end_flow():
     print("--- 1. Initializing Database ---")
     init_db()
     
-    user = get_default_user()
-    print(f"Default User ID: {user['user_id']}, Username: {user['username']}")
+    user = get_user_by_username('default_user')
+    if not user:
+        user_id = create_user('Default User', 'default_user', 'default@eatsafe.app', 'DefaultPass123!')
+        user = {'user_id': user_id, 'username': 'default_user'}
+    print(f"Test User ID: {user['user_id']}, Username: {user['username']}")
 
     allergens = get_all_allergens()
     print(f"Total FSSAI Allergen Categories in KB: {len(allergens)}")

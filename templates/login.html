@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - EAT SAFE AI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/logo.png') }}">
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body style="background-color: var(--bg-page); display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 2rem 1rem;">
+
+  <div style="width: 100%; max-width: 420px;">
+    <!-- Logo & Title -->
+    <div style="text-align: center; margin-bottom: 1.75rem;">
+      <img src="{{ url_for('static', filename='images/logo.png') }}" alt="EAT SAFE Logo" style="height: 64px; width: auto; margin-bottom: 0.5rem; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.08));">
+      <h1 style="font-size: 1.6rem; font-weight: 800; color: var(--text-primary); letter-spacing: -0.3px;">Welcome Back to EAT SAFE</h1>
+      <p style="font-size: 0.88rem; color: var(--text-secondary); margin-top: 0.25rem;">Sign in to access your personalised food allergen screening dashboard</p>
+    </div>
+
+    <!-- Login Card -->
+    <div class="saas-card" style="padding: 2rem; box-shadow: var(--shadow-md);">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flash-messages">
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category }}" style="font-size: 0.85rem; padding: 0.75rem 1rem; border-radius: var(--radius-sm); margin-bottom: 1rem;">{{ message }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <form action="{{ url_for('main.login', next=request.args.get('next', '')) }}" method="POST">
+        <div style="margin-bottom: 1.25rem;">
+          <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.35rem;">Username or Email</label>
+          <div style="position: relative;">
+            <input type="text" name="login_input" required placeholder="Enter username or email" style="width: 100%; padding: 0.65rem 0.85rem 0.65rem 2.25rem; font-size: 0.9rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); outline: none; font-family: inherit;">
+            <i data-lucide="user" style="position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--text-tertiary);"></i>
+          </div>
+        </div>
+
+        <div style="margin-bottom: 1.5rem;">
+          <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.35rem;">Password</label>
+          <div style="position: relative;">
+            <input type="password" name="password" required placeholder="Enter your password" style="width: 100%; padding: 0.65rem 0.85rem 0.65rem 2.25rem; font-size: 0.9rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); outline: none; font-family: inherit;">
+            <i data-lucide="lock" style="position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--text-tertiary);"></i>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.75rem; font-size: 0.95rem;">
+          <i data-lucide="log-in" style="width: 18px; height: 18px;"></i> Sign In
+        </button>
+      </form>
+
+      <div style="text-align: center; margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--border-subtle); font-size: 0.88rem; color: var(--text-secondary);">
+        Don't have an account? <a href="{{ url_for('main.register') }}" style="color: var(--primary); font-weight: 600; text-decoration: none;">Create Account</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    lucide.createIcons();
+  </script>
+</body>
+</html>
