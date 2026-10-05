@@ -11,6 +11,7 @@
   <!-- Column 1: Scanner Form -->
   <div class="saas-card">
     <form action="{{ url_for('main.scan') }}" method="POST" enctype="multipart/form-data" id="scan-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <input type="hidden" name="sample_choice" id="sample_choice" value="">
 
       <!-- Drag & Drop Area -->

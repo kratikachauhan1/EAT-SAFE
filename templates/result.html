@@ -7,6 +7,34 @@
 
 {% block content %}
 
+<!-- Contextual Back Link & Quick Actions -->
+<div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.25rem;">
+  {% if is_guest %}
+    <a href="{{ url_for('main.scan') }}" class="back-link" style="margin-bottom: 0;">
+      <i data-lucide="arrow-left"></i> Back to Scan
+    </a>
+  {% else %}
+    <a href="{{ url_for('main.history') }}" class="back-link" style="margin-bottom: 0;">
+      <i data-lucide="arrow-left"></i> Back to Scan History
+    </a>
+
+    {% if scan and scan.scan_id %}
+      <div>
+        {% if is_saved %}
+          <span class="badge badge-success"><i data-lucide="bookmark-check" style="width: 14px; height: 14px;"></i> Product Saved</span>
+        {% else %}
+          <form action="{{ url_for('main.save_product_action', scan_id=scan.scan_id) }}" method="POST" style="display: inline;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-secondary btn-sm">
+              <i data-lucide="bookmark"></i> Save Product
+            </button>
+          </form>
+        {% endif %}
+      </div>
+    {% endif %}
+  {% endif %}
+</div>
+
 <!-- Guest Mode Personalization Callout Banner -->
 {% if is_guest %}
   <div class="saas-card" style="background-color: var(--primary-light); border-color: var(--primary-border); margin-bottom: 1.5rem;">

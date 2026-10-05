@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}Barcode Product Result - EAT SAFE{% endblock %}
+
+{% block page_title %}Barcode Screening Report{% endblock %}
+{% block page_desc %}Product details and allergen screening from barcode database{% endblock %}
+
+{% block content %}
+
+<a href="{{ url_for('main.scan_barcode') }}" class="back-link">
+  <i data-lucide="arrow-left"></i> Back to Barcode Lookup
+</a>
+
+<div class="saas-card" style="margin-bottom: 1.5rem;">
+  <div style="display: flex; gap: 1.5rem; flex-wrap: wrap; align-items: center;">
+    {% if product.image_url %}
+      <div style="width: 120px; height: 120px; border-radius: var(--radius-md); overflow: hidden; background-color: #f1f5f9; flex-shrink: 0;">
+        <img src="{{ product.image_url }}" alt="{{ product.name }}" style="width: 100%; height: 100%; object-fit: contain;">
+      </div>
+    {% endif %}
+    <div>
+      <span class="badge badge-neutral" style="margin-bottom: 0.4rem;">Barcode: {{ product.barcode }}</span>
+      <h2 style="font-size: 1.3rem; font-weight: 800; color: var(--text-primary); margin: 0 0 0.2rem;">
+        {{ product.name }}
+      </h2>
+      <p style="font-size: 0.9rem; color: var(--text-secondary); margin: 0;">
+        Brand: <strong>{{ product.brand }}</strong>
+      </p>
+    </div>
+  </div>
+</div>
+
+{% if not is_complete %}
+  <div class="alert alert-warning" style="margin-bottom: 1.5rem;">
+    <h4 style="font-weight: 700; margin-bottom: 0.25rem;">⚠️ Incomplete Database Product Record</h4>
+    <p style="font-size: 0.88rem; margin: 0;">
+      This product exists in the barcode database, but its ingredient label text is missing or incomplete. For accurate safety screening, please take a direct photo of the physical ingredient label packaging.
+    </p>
+    <div style="margin-top: 0.75rem;">
+      <a href="{{ url_for('main.scan') }}" class="btn btn-primary btn-sm">
+        <i data-lucide="camera"></i> Take Photo of Physical Label
+      </a>
+    </div>
+  </div>
+{% else %}
+
+  <!-- Top Result Banner -->
+  <div class="result-banner banner-{{ summary.status_color }}">
+    <div class="banner-icon">
+      {% if summary.overall_status == 'DANGER' %}
+        <i data-lucide="alert-octagon"></i>
+      {% elif summary.overall_status == 'CAUTION' %}
+        <i data-lucide="alert-triangle"></i>
+      {% else %}
+        <i data-lucide="check-circle-2"></i>
+      {% endif %}
+    </div>
+    <div class="banner-content">
+      <h2>{{ summary.status_title }}</h2>
+      <p style="font-weight: 600; font-size: 0.95rem; margin-top: 0.15rem;">
+        {{ summary.status_message }}
+      </p>
+    </div>
+  </div>
+
+  <!-- Ingredients Card -->
+  <div class="saas-card" style="margin-top: 1.5rem;">
+    <h3 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 0.75rem; color: var(--text-primary);">
+      Extracted Ingredient List
+    </h3>
+    <div style="font-family: monospace; font-size: 0.9rem; line-height: 1.6; background-color: #f8fafc; padding: 1rem; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+      {{ product.ingredients_text }}
+    </div>
+  </div>
+
+{% endif %}
+
+{% endblock %}

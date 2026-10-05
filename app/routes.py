@@ -1,24 +1,37 @@
 import os
 import re
+import json
+import uuid
 import logging
 from functools import wraps
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify
+from flask import (
+    Blueprint, render_template, request, redirect, url_for, flash,
+    session, jsonify, make_response
+)
+from app.personalisation import evaluate_personalisation
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from app.database import get_db, is_postgres
 from app.models import (
     create_user, get_user_by_id, get_user_by_email, get_user_by_username,
     get_user_by_email_or_username, update_user_profile, update_user_password,
-    delete_user_account, get_all_allergens, get_user_allergy_ids,
-    update_user_allergies, get_user_custom_allergens, add_user_custom_allergen,
-    delete_user_custom_allergen, save_scan, save_detection_results,
-    get_scan_details, get_scan_history
+    get_all_allergens, get_user_allergy_ids, update_user_allergies,
+    get_user_custom_allergens, add_user_custom_allergen, delete_user_custom_allergen,
+    get_scan_details, get_scan_history, get_paginated_scan_history, delete_user_scan,
+    get_dashboard_metrics, complete_user_onboarding
 )
-from app.preprocessing import preprocess_image
-from app.ocr import extract_text_from_image
-from app.allergen_detector import detect_allergens_in_text
-from app.personalisation import evaluate_personalisation
-from app.upload_utils import validate_and_save_upload, is_allowed_extension
+from app.services.storage_service import storage_service
+from app.services.scan_service import (
+    create_and_enqueue_scan, get_scan_status, _SCAN_STATUS_MAP
+)
+from app.services.auth_service import (
+    validate_password_strength, check_login_rate_limit, record_failed_login,
+    clear_login_rate_limit, export_user_data, delete_user_account_complete
+)
+from app.services.product_service import (
+    save_product, unsave_product, get_user_saved_products, is_product_saved, lookup_barcode
+)
+from app.upload_utils import is_allowed_extension
 
 logger = logging.getLogger('eatsafe')
 bp = Blueprint('main', __name__)
@@ -50,43 +63,37 @@ def inject_user():
 @bp.route('/')
 def index():
     if 'user_id' in session and get_user_by_id(session.get('user_id')):
-        user_id = session['user_id']
-        user = get_user_by_id(user_id)
-        user_allergy_ids = get_user_allergy_ids(user_id)
-        allergens = get_all_allergens()
-        
-        selected_allergens = [a for a in allergens if a['allergen_id'] in user_allergy_ids]
-        recent_scans = get_scan_history(user_id, limit=10)
-
-        total_scans = len(recent_scans)
-        allergens_flagged_count = sum(
-            1 for s in recent_scans if any(r.get('is_user_allergy') == 1 for r in s.get('results', []))
-        )
-        last_scan_date = str(recent_scans[0]['created_at'])[:10] if recent_scans else "No scans yet"
-
-        metrics = {
-            'total_scans': total_scans,
-            'allergens_flagged': allergens_flagged_count,
-            'profile_allergens_count': len(selected_allergens),
-            'last_scan': last_scan_date
-        }
-        
-        return render_template(
-            'index.html',
-            user=user,
-            selected_allergens=selected_allergens,
-            recent_scans=recent_scans[:5],
-            metrics=metrics
-        )
-    
-    # Render Public Landing Page for Guests
+        return redirect(url_for('main.dashboard'))
     return render_template('landing.html')
+
+
+@bp.route('/dashboard')
+@login_required
+def dashboard():
+    user_id = session['user_id']
+    user = get_user_by_id(user_id)
+    user_allergy_ids = get_user_allergy_ids(user_id)
+    allergens = get_all_allergens()
+    
+    selected_allergens = [a for a in allergens if a['allergen_id'] in user_allergy_ids]
+    recent_scans = get_scan_history(user_id, limit=5)
+    saved_products = get_user_saved_products(user_id)[:4]
+    metrics = get_dashboard_metrics(user_id)
+
+    return render_template(
+        'index.html',
+        user=user,
+        selected_allergens=selected_allergens,
+        recent_scans=recent_scans,
+        saved_products=saved_products,
+        metrics=metrics
+    )
 
 
 @bp.route('/register', methods=['GET', 'POST'])
 def register():
     if 'user_id' in session and get_user_by_id(session.get('user_id')):
-        return redirect(url_for('main.index'))
+        return redirect(url_for('main.dashboard'))
 
     if request.method == 'POST':
         full_name = request.form.get('full_name', '').strip()
@@ -100,8 +107,7 @@ def register():
             flash('All required fields must be filled.', 'danger')
             return render_template('register.html')
 
-        email_regex = r'^[^@]+@[^@]+\.[^@]+$'
-        if not re.match(email_regex, email):
+        if not re.match(r'^[^@]+@[^@]+\.[^@]+$', email):
             flash('Please enter a valid email address.', 'danger')
             return render_template('register.html')
 
@@ -113,8 +119,9 @@ def register():
             flash('Password and Confirm Password do not match.', 'danger')
             return render_template('register.html')
 
-        if len(password) < 6:
-            flash('Password must be at least 6 characters long.', 'danger')
+        is_strong, pwd_err = validate_password_strength(password)
+        if not is_strong:
+            flash(pwd_err, 'danger')
             return render_template('register.html')
 
         if get_user_by_username(username):
@@ -132,8 +139,9 @@ def register():
 
             session.clear()
             session['user_id'] = user_id
+            session.permanent = True
             flash('Account created successfully! Welcome to EAT SAFE.', 'success')
-            return redirect(url_for('main.index'))
+            return redirect(url_for('main.onboarding'))
         except Exception as e:
             logger.error(f"Error creating user '{username}': {e}")
             flash('An error occurred while creating your account. Please try again.', 'danger')
@@ -145,31 +153,43 @@ def register():
 @bp.route('/login', methods=['GET', 'POST'])
 def login():
     if 'user_id' in session and get_user_by_id(session.get('user_id')):
-        return redirect(url_for('main.index'))
+        return redirect(url_for('main.dashboard'))
 
     if request.method == 'POST':
         login_input = request.form.get('login_input', '').strip()
         password = request.form.get('password', '')
+        remember_me = bool(request.form.get('remember_me'))
 
         if not login_input or not password:
             flash('Please enter your username/email and password.', 'danger')
             return render_template('login.html')
 
+        # Check login rate limiting / lockout
+        allowed, limit_msg = check_login_rate_limit(login_input)
+        if not allowed:
+            flash(limit_msg, 'danger')
+            return render_template('login.html')
+
         user = get_user_by_email_or_username(login_input)
         if not user or not user.get('password_hash') or not check_password_hash(user['password_hash'], password):
+            record_failed_login(login_input)
             logger.warning(f"Failed login attempt for input: '{login_input}'")
             flash('Invalid username/email or password.', 'danger')
             return render_template('login.html')
 
+        # Successful Login
+        clear_login_rate_limit(login_input)
         session.clear()
         session['user_id'] = user['user_id']
+        session.permanent = remember_me
+
         logger.info(f"User logged in successfully: user_id={user['user_id']}")
         flash(f"Welcome back, {user.get('full_name') or user['username']}!", 'success')
 
         next_page = request.args.get('next')
         if next_page and next_page.startswith('/') and not next_page.startswith('//'):
             return redirect(next_page)
-        return redirect(url_for('main.index'))
+        return redirect(url_for('main.dashboard'))
 
     return render_template('login.html')
 
@@ -183,8 +203,26 @@ def logout():
     return redirect(url_for('main.login'))
 
 
+@bp.route('/onboarding', methods=['GET', 'POST'])
+@login_required
+def onboarding():
+    user_id = session['user_id']
+    user = get_user_by_id(user_id)
+    allergens = get_all_allergens()
+
+    if request.method == 'POST':
+        selected_ids = request.form.getlist('allergens')
+        update_user_allergies(user_id, selected_ids)
+        complete_user_onboarding(user_id)
+        flash('Your allergen profile is configured! You are ready to scan your first food label.', 'success')
+        return redirect(url_for('main.scan'))
+
+    user_allergy_ids = get_user_allergy_ids(user_id)
+    return render_template('onboarding.html', user=user, allergens=allergens, user_allergy_ids=user_allergy_ids)
+
+
 # ===================================================
-# PUBLIC & GUEST FOOD LABEL SCANNING
+# FOOD LABEL & BARCODE SCANNING
 # ===================================================
 
 @bp.route('/scan', methods=['GET', 'POST'])
@@ -199,76 +237,49 @@ def scan():
         sample_choice = request.form.get('sample_choice')
         
         saved_filename = None
-        uploads_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'static', 'uploads')
+        rel_img_path = None
+        full_img_path = None
 
         if file and file.filename != '':
-            saved_filename, error_msg = validate_and_save_upload(file, uploads_dir)
+            rel_img_path, error_msg = storage_service.save_file(file)
             if error_msg:
                 flash(error_msg, 'danger')
                 return redirect(url_for('main.scan'))
+            full_img_path = os.path.abspath(os.path.join(storage_service.upload_folder, os.path.basename(rel_img_path)))
+
         elif sample_choice:
             sample_choice_clean = os.path.basename(sample_choice)
             if is_allowed_extension(sample_choice_clean):
                 sample_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'sample_labels', sample_choice_clean)
                 if os.path.exists(sample_path):
-                    import uuid
                     ext = sample_choice_clean.rsplit('.', 1)[1].lower() if '.' in sample_choice_clean else 'jpg'
                     saved_filename = f"sample_{uuid.uuid4().hex[:8]}.{ext}"
-                    dest_path = os.path.join(uploads_dir, saved_filename)
-                    os.makedirs(uploads_dir, exist_ok=True)
+                    dest_path = os.path.abspath(os.path.join(storage_service.upload_folder, saved_filename))
                     with open(sample_path, 'rb') as sf, open(dest_path, 'wb') as df:
                         df.write(sf.read())
+                    rel_img_path = f"uploads/{saved_filename}"
+                    full_img_path = dest_path
 
-        if not saved_filename:
-            flash('Please upload a valid label image file or select a sample label.', 'danger')
+        if not rel_img_path:
+            flash('Please upload a valid food label image file or select a sample label.', 'danger')
             return redirect(url_for('main.scan'))
 
-        full_img_path = os.path.join(uploads_dir, saved_filename)
-        rel_img_path = f"uploads/{saved_filename}"
+        # Run Scan Pipeline Task
+        scan_id = create_and_enqueue_scan(
+            full_img_path,
+            rel_img_path,
+            user_id=user_id if is_logged_in else None,
+            user_allergy_ids=user_allergy_ids,
+            user_custom_terms=user_custom_terms,
+            async_mode=False # Immediate synchronous processing for smooth UX
+        )
 
-        try:
-            # 1. Image Preprocessing with OpenCV
-            processed_img, _ = preprocess_image(full_img_path)
-
-            # 2. OCR with pytesseract
-            ocr_text, ocr_conf, is_reliable = extract_text_from_image(processed_img)
-
-            # 3. Detection & Matching
-            detected_items = detect_allergens_in_text(ocr_text)
-
-            # 4. Personalisation Engine Evaluation
-            summary = evaluate_personalisation(
-                detected_items, 
-                user_allergy_ids, 
-                is_ocr_reliable=is_reliable, 
-                ocr_confidence=ocr_conf,
-                user_custom_terms=user_custom_terms,
-                ocr_raw_text=ocr_text
-            )
-
-            # 5. Handle Guest vs Authenticated User Storage
-            if is_logged_in:
-                scan_id = save_scan(user_id, rel_img_path, ocr_text, ocr_conf)
-                save_detection_results(scan_id, summary['all_detected_records'])
-                logger.info(f"Authenticated scan processed: scan_id={scan_id}, user_id={user_id}")
-                return redirect(url_for('main.result', scan_id=scan_id))
-            else:
-                session['guest_scan'] = {
-                    'scan_record': {
-                        'scan_id': 0,
-                        'image_path': rel_img_path,
-                        'ocr_raw_text': ocr_text,
-                        'ocr_confidence': ocr_conf
-                    },
-                    'summary': summary
-                }
-                logger.info("Guest scan processed successfully.")
-                return redirect(url_for('main.guest_result'))
-
-        except Exception as e:
-            logger.error(f"Error processing food label scan: {e}")
-            flash('An error occurred while processing the food label image. Please try again with a clearer image.', 'danger')
-            return redirect(url_for('main.scan'))
+        if is_logged_in:
+            return redirect(url_for('main.result', scan_id=scan_id))
+        else:
+            session['guest_scan'] = _SCAN_STATUS_MAP.get(scan_id, {}).get('summary', {})
+            session['guest_img_path'] = rel_img_path
+            return redirect(url_for('main.guest_result'))
 
     samples_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'sample_labels')
     samples = []
@@ -278,18 +289,73 @@ def scan():
     return render_template('scan.html', samples=samples, user_allergy_count=len(user_allergy_ids))
 
 
+@bp.route('/scan/barcode', methods=['GET', 'POST'])
+def scan_barcode():
+    if request.method == 'POST':
+        barcode = request.form.get('barcode', '').strip()
+        found, product_data, msg = lookup_barcode(barcode)
+        if not found or not product_data:
+            flash(msg, 'warning')
+            return render_template('barcode_scan.html', barcode=barcode)
+
+        if not product_data.get('is_complete'):
+            flash(msg, 'info')
+            return render_template('barcode_result.html', product=product_data, is_complete=False)
+
+        # Evaluate ingredients from barcode API
+        user_id = session.get('user_id')
+        is_logged_in = bool(user_id and get_user_by_id(user_id))
+        user_allergy_ids = get_user_allergy_ids(user_id) if is_logged_in else set()
+        user_custom_terms = get_user_custom_allergens(user_id) if is_logged_in else []
+
+        from app.allergen_detector import detect_allergens_in_text
+        from app.personalisation import evaluate_personalisation
+
+        raw_text = product_data['ingredients_text']
+        detected_items = detect_allergens_in_text(raw_text)
+        summary = evaluate_personalisation(
+            detected_items,
+            user_allergy_ids,
+            is_ocr_reliable=True,
+            ocr_confidence=100.0,
+            user_custom_terms=user_custom_terms,
+            ocr_raw_text=raw_text
+        )
+        return render_template('barcode_result.html', product=product_data, summary=summary, is_complete=True)
+
+    return render_template('barcode_scan.html')
+
+
+@bp.route('/api/scans/<int:scan_id>/status')
+def api_scan_status(scan_id):
+    """Real-time scan processing status polling API."""
+    status_info = get_scan_status(scan_id)
+    if not status_info:
+        return jsonify({'status': 'not_found', 'message': 'Scan ID not found'}), 404
+    return jsonify(status_info)
+
+
 @bp.route('/result/guest')
 def guest_result():
-    guest_scan = session.get('guest_scan')
-    if not guest_scan:
+    summary = session.get('guest_scan')
+    rel_img_path = session.get('guest_img_path', '')
+    if not summary:
         flash('No recent guest scan found. Please upload a label to scan.', 'info')
         return redirect(url_for('main.scan'))
 
+    scan_record = {
+        'scan_id': 0,
+        'image_path': rel_img_path,
+        'ocr_raw_text': summary.get('status_message', ''),
+        'ocr_confidence': summary.get('ocr_confidence', 0.0)
+    }
+
     return render_template(
         'result.html',
-        scan=guest_scan['scan_record'],
-        summary=guest_scan['summary'],
-        is_guest=True
+        scan=scan_record,
+        summary=summary,
+        is_guest=True,
+        is_saved=False
     )
 
 
@@ -330,7 +396,40 @@ def result(scan_id):
         ocr_raw_text=raw_text
     )
 
-    return render_template('result.html', scan=scan_data, summary=summary, is_guest=False)
+    saved_flag = is_product_saved(user_id, scan_id)
+    return render_template('result.html', scan=scan_data, summary=summary, is_guest=False, is_saved=saved_flag)
+
+
+# ===================================================
+# SAVED PRODUCTS & BARCODE API
+# ===================================================
+
+@bp.route('/products')
+@login_required
+def saved_products():
+    user_id = session['user_id']
+    saved = get_user_saved_products(user_id)
+    return render_template('saved_products.html', saved_products=saved)
+
+
+@bp.route('/products/save/<int:scan_id>', methods=['POST'])
+@login_required
+def save_product_action(scan_id):
+    user_id = session['user_id']
+    product_name = request.form.get('product_name')
+    notes = request.form.get('notes')
+    success, msg = save_product(user_id, scan_id, product_name=product_name, notes=notes)
+    flash(msg, 'success' if success else 'danger')
+    return redirect(url_for('main.result', scan_id=scan_id))
+
+
+@bp.route('/products/unsave/<int:scan_id>', methods=['POST'])
+@login_required
+def unsave_product_action(scan_id):
+    user_id = session['user_id']
+    unsave_product(user_id, scan_id)
+    flash('Product removed from your saved products list.', 'info')
+    return redirect(url_for('main.saved_products'))
 
 
 # ===================================================
@@ -395,16 +494,44 @@ def delete_custom_allergen(custom_id):
 
 
 # ===================================================
-# SCAN HISTORY & SETTINGS
+# SCAN HISTORY & HISTORY DELETE
 # ===================================================
 
 @bp.route('/history')
 @login_required
 def history():
     user_id = session['user_id']
-    scans = get_scan_history(user_id, limit=50)
-    return render_template('history.html', scans=scans)
+    page = request.args.get('page', 1, type=int)
+    query = request.args.get('q', '').strip()
+    status_filter = request.args.get('status', 'all').strip()
+    sort_order = request.args.get('sort', 'newest').strip()
 
+    history_data = get_paginated_scan_history(
+        user_id,
+        page=page,
+        per_page=12,
+        search_query=query,
+        status_filter=status_filter,
+        sort_order=sort_order
+    )
+    return render_template('history.html', history=history_data, query=query, status_filter=status_filter, sort_order=sort_order)
+
+
+@bp.route('/history/delete/<int:scan_id>', methods=['POST'])
+@login_required
+def delete_scan_action(scan_id):
+    user_id = session['user_id']
+    success = delete_user_scan(user_id, scan_id)
+    if success:
+        flash('Scan record and associated image file removed.', 'info')
+    else:
+        flash('Could not delete scan record or access denied.', 'danger')
+    return redirect(url_for('main.history'))
+
+
+# ===================================================
+# SETTINGS, DATA EXPORT & ACCOUNT DELETION
+# ===================================================
 
 @bp.route('/settings')
 @login_required
@@ -471,8 +598,9 @@ def change_password():
         flash('New Password and Confirm New Password do not match.', 'danger')
         return redirect(url_for('main.settings'))
 
-    if len(new_password) < 6:
-        flash('New password must be at least 6 characters long.', 'danger')
+    is_strong, pwd_err = validate_password_strength(new_password)
+    if not is_strong:
+        flash(pwd_err, 'danger')
         return redirect(url_for('main.settings'))
 
     new_hash = generate_password_hash(new_password)
@@ -480,6 +608,22 @@ def change_password():
     logger.info(f"Password changed for user_id={user_id}")
     flash('Password changed successfully!', 'success')
     return redirect(url_for('main.settings'))
+
+
+@bp.route('/settings/export')
+@login_required
+def export_data_action():
+    user_id = session['user_id']
+    payload = export_user_data(user_id)
+    if not payload:
+        flash('Could not export account data.', 'danger')
+        return redirect(url_for('main.settings'))
+
+    json_str = json.dumps(payload, indent=2)
+    response = make_response(json_str)
+    response.headers['Content-Type'] = 'application/json'
+    response.headers['Content-Disposition'] = f'attachment; filename=eatsafe_export_user_{user_id}.json'
+    return response
 
 
 @bp.route('/settings/delete', methods=['POST'])
@@ -491,8 +635,35 @@ def delete_account():
         flash('Please type DELETE to confirm account deletion.', 'danger')
         return redirect(url_for('main.settings'))
 
-    delete_user_account(user_id)
+    delete_user_account_complete(user_id)
     session.clear()
     logger.info(f"Account deleted permanently: user_id={user_id}")
-    flash('Your account and all associated data have been permanently deleted.', 'info')
+    flash('Your account and all associated scan data/images have been permanently deleted.', 'info')
     return redirect(url_for('main.login'))
+
+
+# ===================================================
+# REST API ENDPOINTS
+# ===================================================
+
+@bp.route('/api/me')
+@login_required
+def api_me():
+    user_id = session['user_id']
+    user = get_user_by_id(user_id)
+    allergies = list(get_user_allergy_ids(user_id))
+    custom_terms = get_user_custom_allergens(user_id)
+    metrics = get_dashboard_metrics(user_id)
+
+    return jsonify({
+        'status': 'success',
+        'user': {
+            'user_id': user['user_id'],
+            'full_name': user.get('full_name'),
+            'username': user.get('username'),
+            'email': user.get('email')
+        },
+        'allergies': allergies,
+        'custom_terms': custom_terms,
+        'metrics': metrics
+    })

@@ -108,8 +108,21 @@ def init_db():
             full_name TEXT,
             username VARCHAR(255) NOT NULL UNIQUE,
             email VARCHAR(255) UNIQUE NOT NULL,
-            password_hash TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            password_hash TEXT NOT NULL,
+            onboarding_completed INTEGER DEFAULT 0,
+            failed_login_attempts INTEGER DEFAULT 0,
+            locked_until TIMESTAMP,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS user_preferences (
+            user_id INTEGER PRIMARY KEY REFERENCES users(user_id) ON DELETE CASCADE,
+            warning_explicit INTEGER DEFAULT 1,
+            warning_precautionary INTEGER DEFAULT 1,
+            warning_unreadable INTEGER DEFAULT 1,
+            theme VARCHAR(50) DEFAULT 'light',
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
 
         CREATE TABLE IF NOT EXISTS allergens (
@@ -125,6 +138,7 @@ def init_db():
         CREATE TABLE IF NOT EXISTS user_allergies (
             user_id INTEGER NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
             allergen_id INTEGER NOT NULL REFERENCES allergens(allergen_id) ON DELETE CASCADE,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             PRIMARY KEY (user_id, allergen_id)
         );
 
@@ -136,12 +150,25 @@ def init_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
 
+        CREATE TABLE IF NOT EXISTS products (
+            product_id SERIAL PRIMARY KEY,
+            name VARCHAR(255) NOT NULL,
+            brand VARCHAR(255),
+            barcode VARCHAR(100) UNIQUE,
+            image_path TEXT,
+            ingredients_text TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
         CREATE TABLE IF NOT EXISTS scans (
             scan_id SERIAL PRIMARY KEY,
-            user_id INTEGER NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+            user_id INTEGER REFERENCES users(user_id) ON DELETE CASCADE,
+            product_id INTEGER REFERENCES products(product_id) ON DELETE SET NULL,
             image_path TEXT NOT NULL,
             ocr_raw_text TEXT,
             ocr_confidence REAL DEFAULT 0.0,
+            status VARCHAR(50) DEFAULT 'COMPLETED',
+            error_message TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
 
@@ -155,48 +182,79 @@ def init_db():
             is_user_allergy INTEGER NOT NULL DEFAULT 0,
             confidence REAL DEFAULT 1.0
         );
+
+        CREATE TABLE IF NOT EXISTS saved_products (
+            saved_id SERIAL PRIMARY KEY,
+            user_id INTEGER NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+            scan_id INTEGER NOT NULL REFERENCES scans(scan_id) ON DELETE CASCADE,
+            product_name TEXT,
+            notes TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(user_id, scan_id)
+        );
+
+        CREATE TABLE IF NOT EXISTS audit_logs (
+            log_id SERIAL PRIMARY KEY,
+            user_id INTEGER,
+            action VARCHAR(255) NOT NULL,
+            details TEXT,
+            ip_address VARCHAR(100),
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
         """
         cursor.execute(pg_schema)
     else:
         with open(SCHEMA_PATH, 'r', encoding='utf-8') as f:
             cursor.executescript(f.read())
 
-        # Migration logic for SQLite
+        # Auto-migration checks for existing SQLite databases
         cursor.execute("PRAGMA table_info(users)")
         existing_user_cols = [col[1] for col in cursor.fetchall()]
         
-        if 'full_name' not in existing_user_cols:
-            try:
-                cursor.execute("ALTER TABLE users ADD COLUMN full_name TEXT")
-            except sqlite3.OperationalError:
-                pass
-
-        if 'password_hash' not in existing_user_cols:
-            try:
-                cursor.execute("ALTER TABLE users ADD COLUMN password_hash TEXT")
-            except sqlite3.OperationalError:
-                pass
+        user_alter_queries = [
+            ('full_name', "ALTER TABLE users ADD COLUMN full_name TEXT"),
+            ('password_hash', "ALTER TABLE users ADD COLUMN password_hash TEXT"),
+            ('onboarding_completed', "ALTER TABLE users ADD COLUMN onboarding_completed INTEGER DEFAULT 0"),
+            ('failed_login_attempts', "ALTER TABLE users ADD COLUMN failed_login_attempts INTEGER DEFAULT 0"),
+            ('locked_until', "ALTER TABLE users ADD COLUMN locked_until TIMESTAMP"),
+            ('updated_at', "ALTER TABLE users ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
+        ]
+        for col_name, query in user_alter_queries:
+            if col_name not in existing_user_cols:
+                try:
+                    cursor.execute(query)
+                except sqlite3.OperationalError:
+                    pass
 
         cursor.execute("PRAGMA table_info(allergens)")
         existing_alg_cols = [col[1] for col in cursor.fetchall()]
 
-        if 'category_group' not in existing_alg_cols:
-            try:
-                cursor.execute("ALTER TABLE allergens ADD COLUMN category_group TEXT DEFAULT 'Common'")
-            except sqlite3.OperationalError:
-                pass
+        alg_alter_queries = [
+            ('category_group', "ALTER TABLE allergens ADD COLUMN category_group TEXT DEFAULT 'Common'"),
+            ('synonyms', "ALTER TABLE allergens ADD COLUMN synonyms TEXT"),
+            ('is_custom', "ALTER TABLE allergens ADD COLUMN is_custom INTEGER DEFAULT 0")
+        ]
+        for col_name, query in alg_alter_queries:
+            if col_name not in existing_alg_cols:
+                try:
+                    cursor.execute(query)
+                except sqlite3.OperationalError:
+                    pass
 
-        if 'synonyms' not in existing_alg_cols:
-            try:
-                cursor.execute("ALTER TABLE allergens ADD COLUMN synonyms TEXT")
-            except sqlite3.OperationalError:
-                pass
+        cursor.execute("PRAGMA table_info(scans)")
+        existing_scan_cols = [col[1] for col in cursor.fetchall()]
 
-        if 'is_custom' not in existing_alg_cols:
-            try:
-                cursor.execute("ALTER TABLE allergens ADD COLUMN is_custom INTEGER DEFAULT 0")
-            except sqlite3.OperationalError:
-                pass
+        scan_alter_queries = [
+            ('status', "ALTER TABLE scans ADD COLUMN status TEXT DEFAULT 'COMPLETED'"),
+            ('error_message', "ALTER TABLE scans ADD COLUMN error_message TEXT"),
+            ('product_id', "ALTER TABLE scans ADD COLUMN product_id INTEGER")
+        ]
+        for col_name, query in scan_alter_queries:
+            if col_name not in existing_scan_cols:
+                try:
+                    cursor.execute(query)
+                except sqlite3.OperationalError:
+                    pass
         
     # Seed/Update Allergens from KB JSON
     if os.path.exists(KB_PATH):

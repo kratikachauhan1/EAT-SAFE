@@ -455,3 +455,158 @@ def get_scan_history(user_id, limit=50):
         
     close_connection(conn)
     return scans
+
+
+def get_paginated_scan_history(user_id, page=1, per_page=12, search_query=None, status_filter=None, sort_order='newest'):
+    """Fetch user scans with server-side pagination, search, status filtering, and sorting."""
+    if not user_id:
+        return {'scans': [], 'total': 0, 'page': page, 'pages': 1}
+
+    conn = get_db()
+    cursor = conn.cursor()
+    pg = is_postgres()
+
+    query = "SELECT * FROM scans WHERE user_id = " + ("%s" if pg else "?")
+    params = [user_id]
+
+    if search_query and search_query.strip():
+        term = f"%{search_query.strip().lower()}%"
+        if pg:
+            query += " AND LOWER(ocr_raw_text) LIKE %s"
+        else:
+            query += " AND LOWER(ocr_raw_text) LIKE ?"
+        params.append(term)
+
+    if status_filter and status_filter.strip() and status_filter.strip().lower() != 'all':
+        if pg:
+            query += " AND LOWER(status) = %s"
+        else:
+            query += " AND LOWER(status) = ?"
+        params.append(status_filter.strip().lower())
+
+    # Count total matching records
+    count_sql = f"SELECT COUNT(*) as cnt FROM ({query}) as total_scans" if pg else f"SELECT COUNT(*) as cnt FROM ({query})"
+    cursor.execute(count_sql, tuple(params))
+    row = cursor.fetchone()
+    total_count = row['cnt'] if isinstance(row, dict) else (row[0] if row else 0)
+
+    order_clause = " ORDER BY created_at DESC" if sort_order == 'newest' else " ORDER BY created_at ASC"
+    query += order_clause
+
+    offset = (max(1, page) - 1) * per_page
+    if pg:
+        query += " LIMIT %s OFFSET %s"
+    else:
+        query += " LIMIT ? OFFSET ?"
+    params.extend([per_page, offset])
+
+    cursor.execute(query, tuple(params))
+    scans = [dict(r) for r in cursor.fetchall()]
+
+    for scan in scans:
+        if pg:
+            cursor.execute(
+                "SELECT dr.*, a.category_name FROM detection_results dr JOIN allergens a ON dr.allergen_id = a.allergen_id WHERE dr.scan_id = %s",
+                (scan['scan_id'],)
+            )
+        else:
+            cursor.execute(
+                "SELECT dr.*, a.category_name FROM detection_results dr JOIN allergens a ON dr.allergen_id = a.allergen_id WHERE dr.scan_id = ?",
+                (scan['scan_id'],)
+            )
+        scan['results'] = [dict(r) for r in cursor.fetchall()]
+
+    close_connection(conn)
+
+    total_pages = max(1, (total_count + per_page - 1) // per_page)
+    return {
+        'scans': scans,
+        'total': total_count,
+        'page': page,
+        'per_page': per_page,
+        'pages': total_pages
+    }
+
+
+def delete_user_scan(user_id, scan_id):
+    """Delete a specific scan belonging to user."""
+    if not user_id or not scan_id:
+        return False
+    conn = get_db()
+    cursor = conn.cursor()
+    pg = is_postgres()
+    ph = "%s" if pg else "?"
+
+    # Check scan ownership
+    cursor.execute(f"SELECT image_path FROM scans WHERE scan_id = {ph} AND user_id = {ph}", (scan_id, user_id))
+    scan = cursor.fetchone()
+    if not scan:
+        close_connection(conn)
+        return False
+
+    img_path = scan['image_path']
+
+    cursor.execute(f"DELETE FROM detection_results WHERE scan_id = {ph}", (scan_id,))
+    cursor.execute(f"DELETE FROM saved_products WHERE scan_id = {ph}", (scan_id,))
+    cursor.execute(f"DELETE FROM scans WHERE scan_id = {ph} AND user_id = {ph}", (scan_id, user_id))
+
+    conn.commit()
+    close_connection(conn)
+
+    # Remove storage file
+    from app.services.storage_service import storage_service
+    storage_service.delete_file(img_path)
+    return True
+
+
+def get_dashboard_metrics(user_id):
+    """Compute aggregate dashboard metrics using optimized database queries."""
+    if not user_id:
+        return {'total_scans': 0, 'allergens_flagged': 0, 'profile_allergens_count': 0, 'saved_products_count': 0, 'last_scan': 'No scans yet'}
+
+    conn = get_db()
+    cursor = conn.cursor()
+    ph = "%s" if is_postgres() else "?"
+
+    cursor.execute(f"SELECT COUNT(*) as cnt FROM scans WHERE user_id = {ph}", (user_id,))
+    row = cursor.fetchone()
+    total_scans = row['cnt'] if isinstance(row, dict) else (row[0] if row else 0)
+
+    cursor.execute(
+        f"SELECT COUNT(DISTINCT s.scan_id) as cnt FROM scans s JOIN detection_results dr ON s.scan_id = dr.scan_id WHERE s.user_id = {ph} AND dr.is_user_allergy = 1",
+        (user_id,)
+    )
+    row = cursor.fetchone()
+    allergens_flagged = row['cnt'] if isinstance(row, dict) else (row[0] if row else 0)
+
+    cursor.execute(f"SELECT COUNT(*) as cnt FROM user_allergies WHERE user_id = {ph}", (user_id,))
+    row = cursor.fetchone()
+    profile_allergens_count = row['cnt'] if isinstance(row, dict) else (row[0] if row else 0)
+
+    cursor.execute(f"SELECT COUNT(*) as cnt FROM saved_products WHERE user_id = {ph}", (user_id,))
+    row = cursor.fetchone()
+    saved_products_count = row['cnt'] if isinstance(row, dict) else (row[0] if row else 0)
+
+    cursor.execute(f"SELECT created_at FROM scans WHERE user_id = {ph} ORDER BY created_at DESC LIMIT 1", (user_id,))
+    last_row = cursor.fetchone()
+    last_scan = str(last_row['created_at'])[:10] if last_row else "No scans yet"
+
+    close_connection(conn)
+    return {
+        'total_scans': total_scans,
+        'allergens_flagged': allergens_flagged,
+        'profile_allergens_count': profile_allergens_count,
+        'saved_products_count': saved_products_count,
+        'last_scan': last_scan
+    }
+
+
+def complete_user_onboarding(user_id):
+    """Mark onboarding process completed for a user."""
+    conn = get_db()
+    cursor = conn.cursor()
+    ph = "%s" if is_postgres() else "?"
+    cursor.execute(f"UPDATE users SET onboarding_completed = 1 WHERE user_id = {ph}", (user_id,))
+    conn.commit()
+    close_connection(conn)
+

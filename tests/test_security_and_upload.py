@@ -8,9 +8,7 @@ from PIL import Image
 
 @pytest.fixture
 def app():
-    app = create_app()
-    app.config['TESTING'] = True
-    app.config['SECRET_KEY'] = 'test-secret-key-security'
+    app = create_app({'TESTING': True, 'WTF_CSRF_ENABLED': False, 'SECRET_KEY': 'test-secret-key-security'})
     with app.app_context():
         init_db()
         db = get_db()

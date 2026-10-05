@@ -1,11 +1,16 @@
 {% extends "base.html" %}
 
-{% block title %}Scan History - EAT SAFE AI{% endblock %}
+{% block title %}Scan History - EAT SAFE{% endblock %}
 
 {% block page_title %}Scan History Log{% endblock %}
 {% block page_desc %}Log of all previously analyzed food packaging labels and personalized detection reports{% endblock %}
 
 {% block content %}
+
+<a href="{{ url_for('main.dashboard') }}" class="back-link">
+  <i data-lucide="arrow-left"></i> Back to Dashboard
+</a>
+
 <div class="saas-card">
   
   <!-- Header & Filter Controls -->
@@ -14,16 +19,19 @@
       <i data-lucide="history"></i> Personal Scan Log & Results
     </h3>
     
-    <!-- Filter Pills & Search -->
-    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
-      <input type="text" id="history-search" placeholder="Search history..." style="padding: 0.35rem 0.65rem; font-size: 0.82rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); outline: none;">
-      <button type="button" class="btn btn-secondary btn-sm history-filter-btn active" data-filter="all">All Scans</button>
-      <button type="button" class="btn btn-secondary btn-sm history-filter-btn" data-filter="warning">Warnings</button>
-      <button type="button" class="btn btn-secondary btn-sm history-filter-btn" data-filter="clear">Clear</button>
-    </div>
+    <!-- Filter Controls -->
+    <form action="{{ url_for('main.history') }}" method="GET" style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
+      <input type="text" name="q" value="{{ query or '' }}" placeholder="Search extracted label text..." style="padding: 0.4rem 0.75rem; font-size: 0.82rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); outline: none;">
+      <select name="status" style="padding: 0.4rem 0.65rem; font-size: 0.82rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); outline: none; background: #fff;">
+        <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All Statuses</option>
+        <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completed</option>
+        <option value="failed" {% if status_filter == 'failed' %}selected{% endif %}>Failed</option>
+      </select>
+      <button type="submit" class="btn btn-secondary btn-sm">Filter</button>
+    </form>
   </div>
 
-  {% if scans %}
+  {% if history and history.scans %}
     <div class="saas-table-container">
       <table class="saas-table" id="history-table">
         <thead>
@@ -33,24 +41,16 @@
             <th>OCR Confidence</th>
             <th>Detected Allergens</th>
             <th>Status</th>
-            <th>Action</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
-          {% for scan in scans %}
+          {% for scan in history.scans %}
             {% set user_matched = scan.results | selectattr('is_user_allergy', 'equalto', 1) | list %}
             {% set explicit_matched = user_matched | selectattr('statement_type', 'equalto', 'explicit') | list %}
             {% set prec_matched = user_matched | selectattr('statement_type', 'equalto', 'precautionary') | list %}
-            
-            {% if explicit_matched %}
-              {% set status_tag = 'warning' %}
-            {% elif prec_matched %}
-              {% set status_tag = 'caution' %}
-            {% else %}
-              {% set status_tag = 'clear' %}
-            {% endif %}
 
-            <tr class="history-row" data-status="{{ status_tag }}">
+            <tr class="history-row">
               <td>
                 <div style="display: flex; align-items: center; gap: 0.85rem;">
                   <img src="{{ url_for('static', filename=scan.image_path) }}" alt="Thumbnail" style="width: 44px; height: 44px; object-fit: cover; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">
@@ -88,24 +88,50 @@
                 {% endif %}
               </td>
               <td>
-                <a href="{{ url_for('main.result', scan_id=scan.scan_id) }}" class="btn btn-secondary btn-sm">
-                  View Analysis
-                </a>
+                <div style="display: flex; gap: 0.4rem; align-items: center;">
+                  <a href="{{ url_for('main.result', scan_id=scan.scan_id) }}" class="btn btn-secondary btn-sm">
+                    View Analysis
+                  </a>
+                  <form action="{{ url_for('main.delete_scan_action', scan_id=scan.scan_id) }}" method="POST" style="margin: 0;" onsubmit="return confirm('Delete this scan record and image file?');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-secondary btn-sm" title="Delete Scan">
+                      <i data-lucide="trash-2" style="width: 15px; height: 15px; color: var(--text-danger);"></i>
+                    </button>
+                  </form>
+                </div>
               </td>
             </tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
+
+    <!-- Pagination Controls -->
+    {% if history.pages > 1 %}
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--border-subtle);">
+        <div style="font-size: 0.85rem; color: var(--text-secondary);">
+          Page <strong>{{ history.page }}</strong> of <strong>{{ history.pages }}</strong> (Total: {{ history.total }} scans)
+        </div>
+        <div style="display: flex; gap: 0.5rem;">
+          {% if history.page > 1 %}
+            <a href="{{ url_for('main.history', page=history.page-1, q=query, status=status_filter) }}" class="btn btn-secondary btn-sm">&larr; Previous</a>
+          {% endif %}
+          {% if history.page < history.pages %}
+            <a href="{{ url_for('main.history', page=history.page+1, q=query, status=status_filter) }}" class="btn btn-secondary btn-sm">Next &rarr;</a>
+          {% endif %}
+        </div>
+      </div>
+    {% endif %}
+
   {% else %}
     <!-- Professional Empty State -->
     <div style="text-align: center; padding: 3rem 1.5rem; background-color: var(--bg-page); border-radius: var(--radius-md); border: 1px dashed var(--border-medium);">
       <div style="width: 52px; height: 52px; border-radius: var(--radius-full); background: #ffffff; border: 1px solid var(--border-subtle); display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem auto; color: var(--text-secondary);">
         <i data-lucide="inbox" style="width: 24px; height: 24px;"></i>
       </div>
-      <h4 style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.25rem;">No scans yet</h4>
+      <h4 style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.25rem;">No scan history found</h4>
       <p style="font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 1.25rem;">
-        Scan your first food packaging label to start your personalized scan history.
+        Scan your first food packaging label to start your personalized scan history log.
       </p>
       <a href="{{ url_for('main.scan') }}" class="btn btn-primary">
         <i data-lucide="scan"></i> Scan Your First Label
@@ -114,41 +140,4 @@
   {% endif %}
 
 </div>
-
-<script>
-  const filterBtns = document.querySelectorAll('.history-filter-btn');
-  const rows = document.querySelectorAll('.history-row');
-  const searchInput = document.getElementById('history-search');
-
-  function filterHistory() {
-    const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
-    const activeBtn = document.querySelector('.history-filter-btn.active');
-    const filter = activeBtn ? activeBtn.getAttribute('data-filter') : 'all';
-
-    rows.forEach(row => {
-      const status = row.getAttribute('data-status');
-      const text = row.textContent.toLowerCase();
-      const matchesFilter = (filter === 'all') || (status === filter);
-      const matchesQuery = !query || text.includes(query);
-
-      if (matchesFilter && matchesQuery) {
-        row.style.display = '';
-      } else {
-        row.style.display = 'none';
-      }
-    });
-  }
-
-  filterBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      filterBtns.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      filterHistory();
-    });
-  });
-
-  if (searchInput) {
-    searchInput.addEventListener('input', filterHistory);
-  }
-</script>
 {% endblock %}

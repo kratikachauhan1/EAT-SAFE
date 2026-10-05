@@ -1,11 +1,16 @@
 {% extends "base.html" %}
 
-{% block title %}Settings - EAT SAFE AI{% endblock %}
+{% block title %}Settings - EAT SAFE{% endblock %}
 
 {% block page_title %}Account Settings{% endblock %}
-{% block page_desc %}Manage your profile details, security settings, preferences, and account controls{% endblock %}
+{% block page_desc %}Manage your profile details, security settings, privacy controls, and data export{% endblock %}
 
 {% block content %}
+
+<a href="{{ url_for('main.dashboard') }}" class="back-link">
+  <i data-lucide="arrow-left"></i> Back to Dashboard
+</a>
+
 <div style="max-width: 960px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.5rem;">
 
   <!-- Section A: Account Overview Card -->
@@ -48,6 +53,8 @@
       </div>
 
       <form action="{{ url_for('main.update_profile') }}" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
         <div style="margin-bottom: 1rem;">
           <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.35rem;">Full Name</label>
           <input type="text" name="full_name" value="{{ user.full_name or '' }}" required style="width: 100%; padding: 0.65rem 0.85rem; font-size: 0.9rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); outline: none; font-family: inherit;">
@@ -63,7 +70,7 @@
           <input type="email" name="email" value="{{ user.email or '' }}" required style="width: 100%; padding: 0.65rem 0.85rem; font-size: 0.9rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); outline: none; font-family: inherit;">
         </div>
 
-        <button type="submit" class="btn btn-primary" style="width: 100%;">
+        <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center;">
           <i data-lucide="save"></i> Save Profile Changes
         </button>
       </form>
@@ -78,6 +85,8 @@
       </div>
 
       <form action="{{ url_for('main.change_password') }}" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
         <div style="margin-bottom: 1rem;">
           <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.35rem;">Current Password</label>
           <input type="password" name="current_password" required placeholder="Enter current password" style="width: 100%; padding: 0.65rem 0.85rem; font-size: 0.9rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); outline: none; font-family: inherit;">
@@ -85,7 +94,7 @@
 
         <div style="margin-bottom: 1rem;">
           <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.35rem;">New Password</label>
-          <input type="password" name="new_password" required placeholder="Minimum 6 characters" style="width: 100%; padding: 0.65rem 0.85rem; font-size: 0.9rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); outline: none; font-family: inherit;">
+          <input type="password" name="new_password" required placeholder="Minimum 8 characters" style="width: 100%; padding: 0.65rem 0.85rem; font-size: 0.9rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); outline: none; font-family: inherit;">
         </div>
 
         <div style="margin-bottom: 1.25rem;">
@@ -93,7 +102,7 @@
           <input type="password" name="confirm_new_password" required placeholder="Re-enter new password" style="width: 100%; padding: 0.65rem 0.85rem; font-size: 0.9rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); outline: none; font-family: inherit;">
         </div>
 
-        <button type="submit" class="btn btn-secondary" style="width: 100%;">
+        <button type="submit" class="btn btn-secondary" style="width: 100%; justify-content: center;">
           <i data-lucide="shield-check"></i> Update Password
         </button>
       </form>
@@ -101,30 +110,27 @@
 
   </div>
 
-  <!-- Section D: Preferences -->
+  <!-- Section D: Data Privacy & Export -->
   <div class="saas-card">
     <div class="saas-card-header">
       <h3 class="saas-card-title">
-        <i data-lucide="sliders"></i> Application Preferences
+        <i data-lucide="download-cloud"></i> Privacy & Data Export
       </h3>
     </div>
 
-    <div style="display: flex; flex-direction: column; gap: 1rem;">
-      <label style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; background: var(--bg-page); border-radius: var(--radius-md); border: 1px solid var(--border-subtle); cursor: pointer;">
-        <div>
-          <span style="font-weight: 700; font-size: 0.9rem; color: var(--text-primary); display: block;">High-Contrast Risk Badges</span>
-          <span style="font-size: 0.8rem; color: var(--text-secondary);">Highlight matched allergen warnings with high-contrast color badges.</span>
-        </div>
-        <input type="checkbox" checked style="width: 18px; height: 18px; accent-color: var(--primary);">
-      </label>
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+      <div>
+        <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--text-primary); margin: 0 0 0.2rem;">
+          Export My Data (GDPR Compliant)
+        </h4>
+        <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0;">
+          Download a complete JSON export of your account profile, custom terms, monitored allergies, scan history, and saved products.
+        </p>
+      </div>
 
-      <label style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; background: var(--bg-page); border-radius: var(--radius-md); border: 1px solid var(--border-subtle); cursor: pointer;">
-        <div>
-          <span style="font-weight: 700; font-size: 0.9rem; color: var(--text-primary); display: block;">Automatic Scan History Logging</span>
-          <span style="font-size: 0.8rem; color: var(--text-secondary);">Automatically save food packaging scans and detection reports to your account history.</span>
-        </div>
-        <input type="checkbox" checked style="width: 18px; height: 18px; accent-color: var(--primary);">
-      </label>
+      <a href="{{ url_for('main.export_data_action') }}" class="btn btn-secondary btn-sm">
+        <i data-lucide="download"></i> Download Export (JSON)
+      </a>
     </div>
   </div>
 
@@ -137,15 +143,17 @@
     </div>
 
     <p style="font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 1rem;">
-      Permanently delete your account and all associated personalized scan history, results, and allergy profile records. This action cannot be undone.
+      Permanently delete your account, allergy profile, custom monitored terms, scan history, saved products, and uploaded image files from storage. This action cannot be undone.
     </p>
 
     <form action="{{ url_for('main.delete_account') }}" method="POST" style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
       <div style="flex: 1; min-width: 250px;">
         <label style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-danger); margin-bottom: 0.25rem;">Type DELETE to confirm:</label>
         <input type="text" name="confirm_delete" required placeholder="DELETE" style="width: 100%; padding: 0.6rem 0.85rem; font-size: 0.9rem; border: 1px solid var(--border-danger); border-radius: var(--radius-md); outline: none;">
       </div>
-      <button type="submit" class="btn" style="background-color: var(--color-danger); color: white; margin-top: 1.25rem;" onclick="return confirm('Are you sure you want to permanently delete your account? This action CANNOT be undone!');">
+      <button type="submit" class="btn" style="background-color: var(--color-danger); color: white; margin-top: 1.25rem;" onclick="return confirm('Are you sure you want to permanently delete your account and all stored image files? This action CANNOT be undone!');">
         <i data-lucide="user-x"></i> Delete Account Permanently
       </button>
     </form>

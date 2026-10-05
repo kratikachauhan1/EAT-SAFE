@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
   <title>{% block title %}EAT SAFE - Personalised Food Allergen Detection{% endblock %}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -23,14 +24,14 @@
           <img src="{{ url_for('static', filename='images/logo.png') }}" alt="EAT SAFE Logo" class="sidebar-logo-img">
           <div>
             <div class="sidebar-brand-text">EAT <span>SAFE</span></div>
-            <div class="sidebar-brand-sub">SCAN • DETECT • STAY SAFE</div>
+            <div class="sidebar-brand-sub">ASSISTIVE FOOD LABEL SCREENING</div>
           </div>
         </a>
       </div>
 
       <nav class="sidebar-nav">
         {% if current_user %}
-          <a href="{{ url_for('main.index') }}" class="sidebar-link {% if request.endpoint == 'main.index' %}active{% endif %}">
+          <a href="{{ url_for('main.dashboard') }}" class="sidebar-link {% if request.endpoint == 'main.dashboard' %}active{% endif %}">
             <i data-lucide="layout-dashboard"></i>
             <span>Dashboard</span>
           </a>
@@ -38,9 +39,17 @@
             <i data-lucide="scan-line"></i>
             <span>Scan Label</span>
           </a>
+          <a href="{{ url_for('main.scan_barcode') }}" class="sidebar-link {% if request.endpoint == 'main.scan_barcode' %}active{% endif %}">
+            <i data-lucide="barcode"></i>
+            <span>Scan Barcode</span>
+          </a>
           <a href="{{ url_for('main.profile') }}" class="sidebar-link {% if request.endpoint in ['main.profile', 'main.profile_custom'] %}active{% endif %}">
             <i data-lucide="shield-check"></i>
             <span>Allergy Profile</span>
+          </a>
+          <a href="{{ url_for('main.saved_products') }}" class="sidebar-link {% if request.endpoint == 'main.saved_products' %}active{% endif %}">
+            <i data-lucide="bookmark"></i>
+            <span>Saved Products</span>
           </a>
           <a href="{{ url_for('main.history') }}" class="sidebar-link {% if request.endpoint == 'main.history' %}active{% endif %}">
             <i data-lucide="history"></i>
@@ -58,6 +67,10 @@
           <a href="{{ url_for('main.scan') }}" class="sidebar-link {% if request.endpoint == 'main.scan' %}active{% endif %}">
             <i data-lucide="scan"></i>
             <span>Scan Food Label</span>
+          </a>
+          <a href="{{ url_for('main.scan_barcode') }}" class="sidebar-link {% if request.endpoint == 'main.scan_barcode' %}active{% endif %}">
+            <i data-lucide="barcode"></i>
+            <span>Scan Barcode</span>
           </a>
           <a href="{{ url_for('main.login') }}" class="sidebar-link {% if request.endpoint == 'main.login' %}active{% endif %}">
             <i data-lucide="log-in"></i>
@@ -88,7 +101,7 @@
       {% else %}
         <div class="sidebar-footer" style="flex-direction: column; gap: 0.5rem; align-items: stretch;">
           <a href="{{ url_for('main.register') }}" class="btn btn-primary btn-sm" style="text-align: center;">
-            <i data-lucide="user-plus"></i> Free Account
+            <i data-lucide="user-plus"></i> Create Account
           </a>
         </div>
       {% endif %}
@@ -105,7 +118,7 @@
           </button>
           <div class="header-title-block">
             <h1 class="header-page-title">{% block page_title %}Dashboard{% endblock %}</h1>
-            <p class="header-description">{% block page_desc %}AI-assisted food label screening & personalized allergen detection{% endblock %}</p>
+            <p class="header-description">{% block page_desc %}Assistive food label screening & personalized allergen safety{% endblock %}</p>
           </div>
         </div>
 
@@ -114,8 +127,13 @@
             <i data-lucide="camera" style="width: 15px; height: 15px;"></i> Scan Food Label
           </a>
           {% if current_user %}
+            <div class="header-account-menu" style="position: relative;">
+              <a href="{{ url_for('main.settings') }}" class="btn btn-secondary btn-sm" title="Account Settings">
+                <i data-lucide="user" style="width: 15px; height: 15px;"></i> {{ (current_user.full_name or current_user.username).split()[0] }}
+              </a>
+            </div>
             <a href="{{ url_for('main.logout') }}" class="btn btn-secondary btn-sm" title="Sign Out">
-              <i data-lucide="log-out" style="width: 15px; height: 15px;"></i> Logout
+              <i data-lucide="log-out" style="width: 15px; height: 15px;"></i>
             </a>
           {% else %}
             <a href="{{ url_for('main.login') }}" class="btn btn-secondary btn-sm">
@@ -147,13 +165,56 @@
           <strong>EAT SAFE</strong> — Assistive AI Food Safety Screening System
         </div>
         <div>
-          ⚠️ <em>Assistive information tool only. Not a medical diagnostic tool or guarantee of 100% safety.</em>
+          ⚠️ <em>Assistive screening tool only. Not a medical diagnostic tool or guarantee of 100% food safety. Always verify physical packaging.</em>
         </div>
       </footer>
 
     </div>
 
   </div>
+
+  <!-- Mobile Bottom Navigation Bar -->
+  <nav class="mobile-bottom-nav">
+    {% if current_user %}
+      <a href="{{ url_for('main.dashboard') }}" class="mobile-bottom-link {% if request.endpoint == 'main.dashboard' %}active{% endif %}">
+        <i data-lucide="layout-dashboard"></i>
+        <span>Home</span>
+      </a>
+      <a href="{{ url_for('main.scan') }}" class="mobile-bottom-link {% if request.endpoint == 'main.scan' %}active{% endif %}">
+        <i data-lucide="camera"></i>
+        <span>Scan</span>
+      </a>
+      <a href="{{ url_for('main.saved_products') }}" class="mobile-bottom-link {% if request.endpoint == 'main.saved_products' %}active{% endif %}">
+        <i data-lucide="bookmark"></i>
+        <span>Saved</span>
+      </a>
+      <a href="{{ url_for('main.history') }}" class="mobile-bottom-link {% if request.endpoint == 'main.history' %}active{% endif %}">
+        <i data-lucide="history"></i>
+        <span>History</span>
+      </a>
+      <a href="{{ url_for('main.profile') }}" class="mobile-bottom-link {% if request.endpoint in ['main.profile', 'main.profile_custom'] %}active{% endif %}">
+        <i data-lucide="user"></i>
+        <span>Profile</span>
+      </a>
+    {% else %}
+      <a href="{{ url_for('main.index') }}" class="mobile-bottom-link {% if request.endpoint == 'main.index' %}active{% endif %}">
+        <i data-lucide="home"></i>
+        <span>Home</span>
+      </a>
+      <a href="{{ url_for('main.scan') }}" class="mobile-bottom-link {% if request.endpoint == 'main.scan' %}active{% endif %}">
+        <i data-lucide="camera"></i>
+        <span>Scan</span>
+      </a>
+      <a href="{{ url_for('main.login') }}" class="mobile-bottom-link {% if request.endpoint == 'main.login' %}active{% endif %}">
+        <i data-lucide="log-in"></i>
+        <span>Login</span>
+      </a>
+      <a href="{{ url_for('main.register') }}" class="mobile-bottom-link {% if request.endpoint == 'main.register' %}active{% endif %}">
+        <i data-lucide="user-plus"></i>
+        <span>Signup</span>
+      </a>
+    {% endif %}
+  </nav>
 
   <script src="{{ url_for('static', filename='js/main.js') }}"></script>
   <script>

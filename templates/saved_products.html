@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}Saved Products - EAT SAFE{% endblock %}
+
+{% block page_title %}Saved Products{% endblock %}
+{% block page_desc %}Your bookmarked food scans and product safety reports{% endblock %}
+
+{% block content %}
+
+<a href="{{ url_for('main.dashboard') }}" class="back-link">
+  <i data-lucide="arrow-left"></i> Back to Dashboard
+</a>
+
+{% if saved_products %}
+  <div class="saved-products-grid">
+    {% for item in saved_products %}
+      <div class="saved-product-card">
+        <div>
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; margin-bottom: 0.5rem;">
+            <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary); margin: 0;">
+              {{ item.product_name }}
+            </h3>
+            <span class="badge badge-info" style="font-size: 0.7rem;">Saved</span>
+          </div>
+
+          <div style="font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 0.75rem;">
+            Saved on {{ str(item.created_at)[:10] }}
+          </div>
+
+          {% if item.scan_details and item.scan_details.image_path %}
+            <div style="height: 120px; border-radius: var(--radius-md); overflow: hidden; background-color: #f1f5f9; margin-bottom: 0.75rem;">
+              <img src="{{ url_for('static', filename=item.scan_details.image_path) }}" alt="{{ item.product_name }}" style="width: 100%; height: 100%; object-fit: cover;">
+            </div>
+          {% endif %}
+
+          {% if item.notes %}
+            <p style="font-size: 0.85rem; color: var(--text-secondary); background-color: #f8fafc; padding: 0.5rem; border-radius: var(--radius-sm); margin-bottom: 0.75rem;">
+              <strong>Notes:</strong> {{ item.notes }}
+            </p>
+          {% endif %}
+        </div>
+
+        <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+          <a href="{{ url_for('main.result', scan_id=item.scan_id) }}" class="btn btn-primary btn-sm" style="flex: 1; text-align: center;">
+            <i data-lucide="eye"></i> View Report
+          </a>
+          <form action="{{ url_for('main.unsave_product_action', scan_id=item.scan_id) }}" method="POST" style="margin: 0;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-secondary btn-sm" title="Remove from Saved">
+              <i data-lucide="trash-2" style="width: 16px; height: 16px; color: var(--text-danger);"></i>
+            </button>
+          </form>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="saas-card" style="text-align: center; padding: 3rem 1.5rem;">
+    <div style="width: 56px; height: 56px; border-radius: 50%; background-color: var(--primary-light); color: var(--primary); display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;">
+      <i data-lucide="bookmark" style="width: 28px; height: 28px;"></i>
+    </div>
+    <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 0.5rem;">No Saved Products Yet</h3>
+    <p style="font-size: 0.9rem; color: var(--text-secondary); max-width: 420px; margin: 0 auto 1.5rem;">
+      When you scan a food label, you can save the result here for quick access before purchasing or consuming.
+    </p>
+    <a href="{{ url_for('main.scan') }}" class="btn btn-primary">
+      <i data-lucide="camera"></i> Scan a Food Label
+    </a>
+  </div>
+{% endif %}
+
+{% endblock %}

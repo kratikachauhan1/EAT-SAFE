@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Create Account - EAT SAFE AI</title>
+  <title>Create Account - EAT SAFE</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -16,7 +16,9 @@
   <div style="width: 100%; max-width: 440px;">
     <!-- Logo & Title -->
     <div style="text-align: center; margin-bottom: 1.75rem;">
-      <img src="{{ url_for('static', filename='images/logo.png') }}" alt="EAT SAFE Logo" style="height: 64px; width: auto; margin-bottom: 0.5rem; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.08));">
+      <a href="{{ url_for('main.index') }}" style="text-decoration: none;">
+        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="EAT SAFE Logo" style="height: 64px; width: auto; margin-bottom: 0.5rem; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.08));">
+      </a>
       <h1 style="font-size: 1.6rem; font-weight: 800; color: var(--text-primary); letter-spacing: -0.3px;">Create EAT SAFE Account</h1>
       <p style="font-size: 0.88rem; color: var(--text-secondary); margin-top: 0.25rem;">Start monitoring food label allergens personalized to your health profile</p>
     </div>
@@ -34,6 +36,8 @@
       {% endwith %}
 
       <form action="{{ url_for('main.register') }}" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
         <div style="margin-bottom: 1rem;">
           <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.35rem;">Full Name</label>
           <div style="position: relative;">
@@ -60,21 +64,27 @@
 
         <div style="margin-bottom: 1rem;">
           <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.35rem;">Password</label>
-          <div style="position: relative;">
-            <input type="password" name="password" required placeholder="Minimum 6 characters" style="width: 100%; padding: 0.65rem 0.85rem 0.65rem 2.25rem; font-size: 0.9rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); outline: none; font-family: inherit;">
+          <div class="password-toggle-wrapper">
+            <input type="password" id="reg-pass" name="password" required placeholder="Minimum 8 characters (letters & numbers)" style="width: 100%; padding: 0.65rem 2.5rem 0.65rem 2.25rem; font-size: 0.9rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); outline: none; font-family: inherit;">
             <i data-lucide="lock" style="position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--text-tertiary);"></i>
+            <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('reg-pass', this)" title="Show/Hide Password">
+              <i data-lucide="eye" style="width: 16px; height: 16px;"></i>
+            </button>
           </div>
         </div>
 
         <div style="margin-bottom: 1.5rem;">
           <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.35rem;">Confirm Password</label>
-          <div style="position: relative;">
-            <input type="password" name="confirm_password" required placeholder="Re-enter password" style="width: 100%; padding: 0.65rem 0.85rem 0.65rem 2.25rem; font-size: 0.9rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); outline: none; font-family: inherit;">
+          <div class="password-toggle-wrapper">
+            <input type="password" id="reg-confirm" name="confirm_password" required placeholder="Re-enter password" style="width: 100%; padding: 0.65rem 2.5rem 0.65rem 2.25rem; font-size: 0.9rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); outline: none; font-family: inherit;">
             <i data-lucide="check-check" style="position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--text-tertiary);"></i>
+            <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('reg-confirm', this)" title="Show/Hide Password">
+              <i data-lucide="eye" style="width: 16px; height: 16px;"></i>
+            </button>
           </div>
         </div>
 
-        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.75rem; font-size: 0.95rem;">
+        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.75rem; font-size: 0.95rem; justify-content: center;">
           <i data-lucide="user-plus" style="width: 18px; height: 18px;"></i> Create Account
         </button>
       </form>
@@ -87,6 +97,18 @@
 
   <script>
     lucide.createIcons();
+
+    function togglePasswordVisibility(inputId, btn) {
+      const input = document.getElementById(inputId);
+      if (input.type === 'password') {
+        input.type = 'text';
+        btn.innerHTML = '<i data-lucide="eye-off" style="width: 16px; height: 16px;"></i>';
+      } else {
+        input.type = 'password';
+        btn.innerHTML = '<i data-lucide="eye" style="width: 16px; height: 16px;"></i>';
+      }
+      lucide.createIcons();
+    }
   </script>
 </body>
 </html>
