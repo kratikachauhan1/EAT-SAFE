@@ -13,24 +13,70 @@
   <!-- Lucide Vector Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
 </head>
-<body>
+<body class="{% if not current_user %}public-layout{% endif %}">
 
-  <div class="app-shell">
-    
-    <!-- LEFT SIDEBAR (Desktop / Tablet / Mobile Drawer) -->
-    <aside class="sidebar" id="app-sidebar">
-      <div class="sidebar-header">
-        <a href="{{ url_for('main.index') }}" style="display: flex; align-items: center; gap: 0.75rem; text-decoration: none; color: inherit;">
-          <img src="{{ url_for('static', filename='images/logo.png') }}" alt="EAT SAFE Logo" class="sidebar-logo-img">
-          <div>
-            <div class="sidebar-brand-text">EAT <span>SAFE</span></div>
-            <div class="sidebar-brand-sub">ASSISTIVE FOOD LABEL SCREENING</div>
+  {% if not current_user %}
+    <!-- PUBLIC SINGLE-ROW TOP NAVBAR (Desktop & Mobile Responsive) -->
+    <header class="public-top-navbar">
+      <div class="public-nav-container">
+        <a href="{{ url_for('main.index') }}" class="public-nav-brand">
+          <img src="{{ url_for('static', filename='images/logo.png') }}" alt="EAT SAFE Logo" class="header-logo-img">
+          <div class="brand-text-block">
+            <span class="brand-title">EAT <span>SAFE</span></span>
+            <span class="brand-subtitle">ASSISTIVE FOOD SAFETY</span>
           </div>
         </a>
-      </div>
 
-      <nav class="sidebar-nav">
-        {% if current_user %}
+        <nav class="public-nav-menu" id="public-nav-menu">
+          <a href="{{ url_for('main.index') }}" class="public-nav-item {% if request.endpoint == 'main.index' %}active{% endif %}">
+            <i data-lucide="home"></i> Home
+          </a>
+          <a href="{{ url_for('main.scan') }}" class="public-nav-item {% if request.endpoint == 'main.scan' %}active{% endif %}">
+            <i data-lucide="scan"></i> Scan Label
+          </a>
+          <a href="{{ url_for('main.scan_barcode') }}" class="public-nav-item {% if request.endpoint == 'main.scan_barcode' %}active{% endif %}">
+            <i data-lucide="barcode"></i> Scan Barcode
+          </a>
+          <a href="{{ url_for('main.how_it_works') }}" class="public-nav-item {% if request.endpoint == 'main.how_it_works' %}active{% endif %}">
+            <i data-lucide="cpu"></i> How It Works
+          </a>
+          <a href="{{ url_for('main.about') }}" class="public-nav-item {% if request.endpoint == 'main.about' %}active{% endif %}">
+            <i data-lucide="info"></i> About
+          </a>
+        </nav>
+
+        <div class="public-auth-group">
+          <a href="{{ url_for('main.login') }}" class="btn btn-secondary btn-sm nav-auth-btn">
+            <i data-lucide="log-in" style="width: 15px; height: 15px;"></i> Sign In
+          </a>
+          <a href="{{ url_for('main.register') }}" class="btn btn-primary btn-sm nav-auth-btn">
+            <i data-lucide="user-plus" style="width: 15px; height: 15px;"></i> Create Account
+          </a>
+        </div>
+
+        <button type="button" class="btn btn-secondary btn-sm mobile-menu-toggle" id="public-mobile-btn" aria-label="Toggle Menu">
+          <i data-lucide="menu" style="width: 18px; height: 18px;"></i>
+        </button>
+      </div>
+    </header>
+  {% endif %}
+
+  <div class="app-shell {% if not current_user %}public-shell{% endif %}">
+    
+    {% if current_user %}
+      <!-- LEFT SIDEBAR (Authenticated Workspace Desktop / Mobile Drawer) -->
+      <aside class="sidebar" id="app-sidebar">
+        <div class="sidebar-header">
+          <a href="{{ url_for('main.dashboard') }}" style="display: flex; align-items: center; gap: 0.75rem; text-decoration: none; color: inherit;">
+            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="EAT SAFE Logo" class="sidebar-logo-img">
+            <div>
+              <div class="sidebar-brand-text">EAT <span>SAFE</span></div>
+              <div class="sidebar-brand-sub">ASSISTIVE FOOD LABEL SCREENING</div>
+            </div>
+          </a>
+        </div>
+
+        <nav class="sidebar-nav">
           <a href="{{ url_for('main.dashboard') }}" class="sidebar-link {% if request.endpoint == 'main.dashboard' %}active{% endif %}">
             <i data-lucide="layout-dashboard"></i>
             <span>Dashboard</span>
@@ -59,31 +105,8 @@
             <i data-lucide="settings"></i>
             <span>Settings</span>
           </a>
-        {% else %}
-          <a href="{{ url_for('main.index') }}" class="sidebar-link {% if request.endpoint == 'main.index' %}active{% endif %}">
-            <i data-lucide="home"></i>
-            <span>Home</span>
-          </a>
-          <a href="{{ url_for('main.scan') }}" class="sidebar-link {% if request.endpoint == 'main.scan' %}active{% endif %}">
-            <i data-lucide="scan"></i>
-            <span>Scan Food Label</span>
-          </a>
-          <a href="{{ url_for('main.scan_barcode') }}" class="sidebar-link {% if request.endpoint == 'main.scan_barcode' %}active{% endif %}">
-            <i data-lucide="barcode"></i>
-            <span>Scan Barcode</span>
-          </a>
-          <a href="{{ url_for('main.login') }}" class="sidebar-link {% if request.endpoint == 'main.login' %}active{% endif %}">
-            <i data-lucide="log-in"></i>
-            <span>Sign In</span>
-          </a>
-          <a href="{{ url_for('main.register') }}" class="sidebar-link {% if request.endpoint == 'main.register' %}active{% endif %}">
-            <i data-lucide="user-plus"></i>
-            <span>Create Account</span>
-          </a>
-        {% endif %}
-      </nav>
+        </nav>
 
-      {% if current_user %}
         <div class="sidebar-footer" style="justify-content: space-between;">
           <div style="display: flex; align-items: center; gap: 0.75rem; overflow: hidden;">
             <div class="user-avatar">
@@ -98,35 +121,29 @@
             <i data-lucide="log-out" style="width: 18px; height: 18px;"></i>
           </a>
         </div>
-      {% else %}
-        <div class="sidebar-footer" style="flex-direction: column; gap: 0.5rem; align-items: stretch;">
-          <a href="{{ url_for('main.register') }}" class="btn btn-primary btn-sm" style="text-align: center;">
-            <i data-lucide="user-plus"></i> Create Account
-          </a>
-        </div>
-      {% endif %}
-    </aside>
+      </aside>
+    {% endif %}
 
     <!-- MAIN AREA -->
-    <div class="main-content">
+    <div class="main-content {% if not current_user %}public-main-content{% endif %}">
       
-      <!-- Top Header Bar -->
-      <header class="top-header">
-        <div style="display: flex; align-items: center; gap: 1rem;">
-          <button type="button" class="btn btn-secondary btn-sm mobile-menu-toggle" id="mobile-toggle-btn" aria-label="Toggle Navigation Menu">
-            <i data-lucide="menu" style="width: 18px; height: 18px;"></i>
-          </button>
-          <div class="header-title-block">
-            <h1 class="header-page-title">{% block page_title %}Dashboard{% endblock %}</h1>
-            <p class="header-description">{% block page_desc %}Assistive food label screening & personalized allergen safety{% endblock %}</p>
+      {% if current_user %}
+        <!-- Workspace Top Header Bar for Authenticated User -->
+        <header class="top-header">
+          <div style="display: flex; align-items: center; gap: 1rem;">
+            <button type="button" class="btn btn-secondary btn-sm mobile-menu-toggle" id="mobile-toggle-btn" aria-label="Toggle Navigation Menu">
+              <i data-lucide="menu" style="width: 18px; height: 18px;"></i>
+            </button>
+            <div class="header-title-block">
+              <h1 class="header-page-title">{% block page_title %}Dashboard{% endblock %}</h1>
+              <p class="header-description">{% block page_desc %}Assistive food label screening & personalized allergen safety{% endblock %}</p>
+            </div>
           </div>
-        </div>
 
-        <div style="display: flex; align-items: center; gap: 0.75rem;">
-          <a href="{{ url_for('main.scan') }}" class="btn btn-primary btn-sm">
-            <i data-lucide="camera" style="width: 15px; height: 15px;"></i> Scan Food Label
-          </a>
-          {% if current_user %}
+          <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <a href="{{ url_for('main.scan') }}" class="btn btn-primary btn-sm">
+              <i data-lucide="camera" style="width: 15px; height: 15px;"></i> Scan Food Label
+            </a>
             <div class="header-account-menu" style="position: relative;">
               <a href="{{ url_for('main.settings') }}" class="btn btn-secondary btn-sm" title="Account Settings">
                 <i data-lucide="user" style="width: 15px; height: 15px;"></i> {{ (current_user.full_name or current_user.username).split()[0] }}
@@ -135,13 +152,9 @@
             <a href="{{ url_for('main.logout') }}" class="btn btn-secondary btn-sm" title="Sign Out">
               <i data-lucide="log-out" style="width: 15px; height: 15px;"></i>
             </a>
-          {% else %}
-            <a href="{{ url_for('main.login') }}" class="btn btn-secondary btn-sm">
-              <i data-lucide="log-in" style="width: 15px; height: 15px;"></i> Sign In
-            </a>
-          {% endif %}
-        </div>
-      </header>
+          </div>
+        </header>
+      {% endif %}
 
       <!-- Page Content -->
       <div class="page-container">
@@ -161,7 +174,7 @@
       <!-- Footer Disclaimer -->
       <footer class="footer-disclaimer">
         <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
-          <img src="{{ url_for('static', filename='images/logo.png') }}" alt="EAT SAFE Logo" style="height: 24px; width: auto;">
+          <img src="{{ url_for('static', filename='images/logo.png') }}" alt="EAT SAFE Logo" style="height: 28px; width: auto; object-fit: contain;">
           <strong>EAT SAFE</strong> — Assistive AI Food Safety Screening System
         </div>
         <div>
@@ -220,15 +233,21 @@
   <script>
     lucide.createIcons();
     
-    // Mobile navigation toggle
+    // Sidebar toggle for logged in workspace
     const toggleBtn = document.getElementById('mobile-toggle-btn');
-    const sidebar = id => document.getElementById('app-sidebar');
     if (toggleBtn) {
       toggleBtn.addEventListener('click', () => {
-        const sb = sidebar();
-        if (sb) {
-          sb.classList.toggle('mobile-open');
-        }
+        const sb = document.getElementById('app-sidebar');
+        if (sb) sb.classList.toggle('mobile-open');
+      });
+    }
+
+    // Public top nav mobile menu toggle
+    const publicMobileBtn = document.getElementById('public-mobile-btn');
+    if (publicMobileBtn) {
+      publicMobileBtn.addEventListener('click', () => {
+        const menu = document.getElementById('public-nav-menu');
+        if (menu) menu.classList.toggle('mobile-active');
       });
     }
   </script>

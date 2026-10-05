@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block title %}How It Works - EAT SAFE AI Food Screening{% endblock %}
+
+{% block page_title %}How EAT SAFE Works{% endblock %}
+{% block page_desc %}Understanding the multi-stage OCR & NLP allergen screening engine{% endblock %}
+
+{% block content %}
+
+<div style="max-width: 960px; margin: 0 auto; display: flex; flex-direction: column; gap: 2rem;">
+
+  <!-- Hero Banner -->
+  <div style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: white; padding: 2.5rem; border-radius: var(--radius-lg); text-align: center; box-shadow: var(--shadow-md);">
+    <div style="display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(37, 99, 235, 0.2); border: 1px solid rgba(59, 130, 246, 0.4); padding: 0.35rem 0.85rem; border-radius: var(--radius-full); font-size: 0.82rem; font-weight: 700; color: #60a5fa; margin-bottom: 1.25rem;">
+      <i data-lucide="cpu" style="width: 16px; height: 16px;"></i> Computer Vision + NLP Allergen Screening
+    </div>
+    <h1 style="font-size: 2.2rem; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 0.75rem;">
+      How EAT SAFE Works
+    </h1>
+    <p style="font-size: 1.05rem; color: #94a3b8; max-width: 720px; margin: 0 auto; line-height: 1.6;">
+      Assistive Computer Vision + NLP Food Packaging Analysis Engine
+    </p>
+  </div>
+
+  <!-- Pipeline Steps -->
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
+
+    <!-- Step 1 -->
+    <div class="saas-card" style="padding: 1.75rem; border-top: 4px solid var(--primary);">
+      <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
+        <div style="width: 40px; height: 40px; border-radius: var(--radius-md); background: var(--primary-light); color: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.1rem;">
+          1
+        </div>
+        <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary);">Image Preprocessing</h3>
+      </div>
+      <p style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 1rem;">
+        When you upload a package photo or scan a label using your device camera, OpenCV converts the image to grayscale, applies adaptive thresholding, reduces Gaussian noise, and sharpens text boundaries.
+      </p>
+      <div style="font-size: 0.78rem; background: var(--bg-page); padding: 0.6rem 0.85rem; border-radius: var(--radius-sm); color: var(--text-secondary); border: 1px solid var(--border-subtle);">
+        <i data-lucide="check" style="width: 14px; height: 14px; color: var(--color-success); vertical-align: middle;"></i> Grayscale, Adaptive Threshold & Contrast Equalization
+      </div>
+    </div>
+
+    <!-- Step 2 -->
+    <div class="saas-card" style="padding: 1.75rem; border-top: 4px solid var(--color-warning);">
+      <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
+        <div style="width: 40px; height: 40px; border-radius: var(--radius-md); background: rgba(245, 158, 11, 0.1); color: var(--color-warning); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.1rem;">
+          2
+        </div>
+        <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary);">Tesseract OCR Extraction</h3>
+      </div>
+      <p style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 1rem;">
+        Tesseract OCR extracts raw textual ingredient statements from the preprocessed image frame and assigns an average character confidence score to evaluate readability.
+      </p>
+      <div style="font-size: 0.78rem; background: var(--bg-page); padding: 0.6rem 0.85rem; border-radius: var(--radius-sm); color: var(--text-secondary); border: 1px solid var(--border-subtle);">
+        <i data-lucide="check" style="width: 14px; height: 14px; color: var(--color-success); vertical-align: middle;"></i> Confidence-weighted text string extraction
+      </div>
+    </div>
+
+    <!-- Step 3 -->
+    <div class="saas-card" style="padding: 1.75rem; border-top: 4px solid var(--accent-teal);">
+      <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
+        <div style="width: 40px; height: 40px; border-radius: var(--radius-md); background: var(--accent-teal-light); color: var(--accent-teal); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.1rem;">
+          3
+        </div>
+        <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary);">NLP Section Tokenization</h3>
+      </div>
+      <p style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 1rem;">
+        The NLP tokenizer divides text into <strong>Explicit Ingredients</strong> (e.g. <em>"Ingredients: Wheat Flour, Milk Solids..."</em>) and <strong>Precautionary Cautions</strong> (e.g. <em>"May contain traces of peanuts..."</em>).
+      </p>
+      <div style="font-size: 0.78rem; background: var(--bg-page); padding: 0.6rem 0.85rem; border-radius: var(--radius-sm); color: var(--text-secondary); border: 1px solid var(--border-subtle);">
+        <i data-lucide="check" style="width: 14px; height: 14px; color: var(--color-success); vertical-align: middle;"></i> Distinguishes direct ingredients vs cross-contact cautions
+      </div>
+    </div>
+
+    <!-- Step 4 -->
+    <div class="saas-card" style="padding: 1.75rem; border-top: 4px solid var(--color-danger);">
+      <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
+        <div style="width: 40px; height: 40px; border-radius: var(--radius-md); background: var(--bg-danger); color: var(--color-danger); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.1rem;">
+          4
+        </div>
+        <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary);">Personalized Risk Match</h3>
+      </div>
+      <p style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 1rem;">
+        Extracted tokens are cross-referenced with your active allergy profile (e.g., Peanuts, Whey, Casein, Gluten) and custom terms to generate immediate HIGH RISK or CAUTION risk badges.
+      </p>
+      <div style="font-size: 0.78rem; background: var(--bg-page); padding: 0.6rem 0.85rem; border-radius: var(--radius-sm); color: var(--text-secondary); border: 1px solid var(--border-subtle);">
+        <i data-lucide="check" style="width: 14px; height: 14px; color: var(--color-success); vertical-align: middle;"></i> Exact & fuzzy derivative term matching
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Assistive Disclaimer Box -->
+  <div class="saas-card" style="background-color: var(--bg-warning); border-color: var(--border-warning); padding: 1.75rem;">
+    <div style="display: flex; gap: 1rem; align-items: flex-start;">
+      <i data-lucide="alert-triangle" style="width: 24px; height: 24px; color: var(--color-warning); flex-shrink: 0; margin-top: 2px;"></i>
+      <div>
+        <h4 style="font-size: 1rem; font-weight: 800; color: var(--text-warning); margin-bottom: 0.35rem;">Assistive Screening Tool Disclaimer</h4>
+        <p style="font-size: 0.88rem; color: var(--text-secondary); margin: 0; line-height: 1.5;">
+          EAT SAFE is designed as an assistive screening utility to highlight potential allergen derivatives on food packaging labels. It does not constitute medical advice or guarantee 100% food safety. Users with life-threatening allergies must always physically inspect product packaging prior to consumption.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div style="text-align: center;">
+    <a href="{{ url_for('main.scan') }}" class="btn btn-primary btn-lg" style="padding: 0.85rem 2rem;">
+      <i data-lucide="scan"></i> Try Scanning a Food Label
+    </a>
+  </div>
+
+</div>
+
+{% endblock %}

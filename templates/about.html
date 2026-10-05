@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}About Us - EAT SAFE Assistive Food Safety System{% endblock %}
+
+{% block page_title %}About EAT SAFE{% endblock %}
+{% block page_desc %}Empowering consumers with intelligent food packaging transparency{% endblock %}
+
+{% block content %}
+
+<div style="max-width: 960px; margin: 0 auto; display: flex; flex-direction: column; gap: 2rem;">
+
+  <!-- Hero Section -->
+  <div class="saas-card" style="padding: 2.5rem; text-align: center; background: linear-gradient(135deg, #ffffff 0%, #f0f7ff 100%);">
+    <img src="{{ url_for('static', filename='images/logo.png') }}" alt="EAT SAFE Logo" style="height: 72px; width: auto; margin-bottom: 1rem; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.1));">
+    <h1 style="font-size: 2.2rem; font-weight: 800; color: var(--text-primary); letter-spacing: -0.5px; margin-bottom: 0.75rem;">
+      About EAT SAFE
+    </h1>
+    <p style="font-size: 1.05rem; color: var(--text-secondary); max-width: 720px; margin: 0 auto; line-height: 1.6;">
+      Our mission is to reduce food allergen risks by transforming complex packaging fine print into instant, personalized safety insights.
+    </p>
+  </div>
+
+  <!-- Key Pillars Grid -->
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
+    
+    <div class="saas-card" style="padding: 1.75rem;">
+      <div style="width: 44px; height: 44px; border-radius: var(--radius-md); background: var(--primary-light); color: var(--primary); display: flex; align-items: center; justify-content: center; margin-bottom: 1rem;">
+        <i data-lucide="shield" style="width: 24px; height: 24px;"></i>
+      </div>
+      <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">Accessibility First</h3>
+      <p style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6;">
+        We believe basic food safety screening should be free and accessible to all. Guest users can scan packaging labels instantly without friction or mandatory account barriers.
+      </p>
+    </div>
+
+    <div class="saas-card" style="padding: 1.75rem;">
+      <div style="width: 44px; height: 44px; border-radius: var(--radius-md); background: var(--accent-teal-light); color: var(--accent-teal); display: flex; align-items: center; justify-content: center; margin-bottom: 1rem;">
+        <i data-lucide="sliders" style="width: 24px; height: 24px;"></i>
+      </div>
+      <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">Health Personalization</h3>
+      <p style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6;">
+        Every individual's dietary requirements are unique. Registered users configure tailored allergen profiles, custom terms, and barcode history for immediate protection.
+      </p>
+    </div>
+
+    <div class="saas-card" style="padding: 1.75rem;">
+      <div style="width: 44px; height: 44px; border-radius: var(--radius-md); background: rgba(245, 158, 11, 0.1); color: var(--color-warning); display: flex; align-items: center; justify-content: center; margin-bottom: 1rem;">
+        <i data-lucide="database" style="width: 24px; height: 24px;"></i>
+      </div>
+      <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">Open Data & Verification</h3>
+      <p style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6;">
+        Integrating Open Food Facts API and robust local computer vision ensures reliable product lookup backed by fallback label OCR verification.
+      </p>
+    </div>
+
+  </div>
+
+  <!-- Tech Stack Overview -->
+  <div class="saas-card" style="padding: 2rem;">
+    <h3 style="font-size: 1.2rem; font-weight: 800; color: var(--text-primary); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+      <i data-lucide="layers" style="color: var(--primary);"></i> Technology Stack & Standards Compliance
+    </h3>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.25rem;">
+      <div style="background: var(--bg-page); padding: 1rem; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+        <strong style="color: var(--text-primary); display: block; margin-bottom: 0.25rem;">Backend Framework</strong>
+        <span style="font-size: 0.85rem; color: var(--text-secondary);">Python 3.14 + Flask micro-framework</span>
+      </div>
+      <div style="background: var(--bg-page); padding: 1rem; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+        <strong style="color: var(--text-primary); display: block; margin-bottom: 0.25rem;">Computer Vision & OCR</strong>
+        <span style="font-size: 0.85rem; color: var(--text-secondary);">OpenCV + Tesseract OCR Engine</span>
+      </div>
+      <div style="background: var(--bg-page); padding: 1rem; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+        <strong style="color: var(--text-primary); display: block; margin-bottom: 0.25rem;">Regulatory Standards</strong>
+        <span style="font-size: 0.85rem; color: var(--text-secondary);">FSSAI Food Safety Regulations</span>
+      </div>
+      <div style="background: var(--bg-page); padding: 1rem; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+        <strong style="color: var(--text-primary); display: block; margin-bottom: 0.25rem;">Storage & DB</strong>
+        <span style="font-size: 0.85rem; color: var(--text-secondary);">Dual SQLite / PostgreSQL + S3 Storage</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}

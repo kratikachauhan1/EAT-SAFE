@@ -67,6 +67,17 @@ def index():
     return render_template('landing.html')
 
 
+@bp.route('/how-it-works')
+def how_it_works():
+    return render_template('how_it_works.html')
+
+
+@bp.route('/about')
+def about():
+    return render_template('about.html')
+
+
+
 @bp.route('/dashboard')
 @login_required
 def dashboard():

@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
   <title>Create Account - EAT SAFE</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,22 +15,42 @@
 <body style="background-color: var(--bg-page); display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 2rem 1rem;">
 
   <div style="width: 100%; max-width: 440px;">
-    <!-- Logo & Title -->
-    <div style="text-align: center; margin-bottom: 1.75rem;">
-      <a href="{{ url_for('main.index') }}" style="text-decoration: none;">
-        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="EAT SAFE Logo" style="height: 64px; width: auto; margin-bottom: 0.5rem; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.08));">
+    
+    <!-- Top Back Link -->
+    <div style="margin-bottom: 1rem;">
+      <a href="javascript:history.back()" class="auth-back-link" style="display: inline-flex; align-items: center; gap: 0.4rem; color: var(--text-secondary); text-decoration: none; font-size: 0.88rem; font-weight: 500; transition: color 0.15s ease;">
+        <i data-lucide="arrow-left" style="width: 18px; height: 18px;"></i> Back
       </a>
-      <h1 style="font-size: 1.6rem; font-weight: 800; color: var(--text-primary); letter-spacing: -0.3px;">Create EAT SAFE Account</h1>
-      <p style="font-size: 0.88rem; color: var(--text-secondary); margin-top: 0.25rem;">Start monitoring food label allergens personalized to your health profile</p>
     </div>
 
-    <!-- Register Card -->
+    <!-- Logo & Title Header -->
+    <div style="text-align: center; margin-bottom: 1.5rem;">
+      <a href="{{ url_for('main.index') }}" style="text-decoration: none; display: inline-block;">
+        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="EAT SAFE Logo" style="height: 64px; width: auto; margin-bottom: 0.5rem; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.08)); image-rendering: -webkit-optimize-contrast;">
+      </a>
+      <h1 style="font-size: 1.6rem; font-weight: 800; color: var(--text-primary); letter-spacing: -0.3px;">Create EAT SAFE Account</h1>
+      <p style="font-size: 0.88rem; color: var(--text-secondary); margin-top: 0.25rem;">Set your personal allergy profile & track food scans</p>
+    </div>
+
+    <!-- Auth Card Container -->
     <div class="saas-card" style="padding: 2rem; box-shadow: var(--shadow-md);">
+      
+      <!-- Unified Auth Tabs -->
+      <div class="auth-tabs" style="display: flex; background: var(--bg-page); padding: 4px; border-radius: var(--radius-md); margin-bottom: 1.5rem; border: 1px solid var(--border-subtle);">
+        <a href="{{ url_for('main.login') }}" class="auth-tab" style="flex: 1; text-align: center; padding: 0.6rem; font-size: 0.9rem; font-weight: 600; text-decoration: none; color: var(--text-secondary); border-radius: var(--radius-sm);">
+          <i data-lucide="log-in" style="width: 15px; height: 15px; vertical-align: middle;"></i> Sign In
+        </a>
+        <a href="{{ url_for('main.register') }}" class="auth-tab active" style="flex: 1; text-align: center; padding: 0.6rem; font-size: 0.9rem; font-weight: 700; text-decoration: none; color: var(--primary); background: var(--bg-surface); border-radius: var(--radius-sm); box-shadow: var(--shadow-sm);">
+          <i data-lucide="user-plus" style="width: 15px; height: 15px; vertical-align: middle;"></i> Create Account
+        </a>
+      </div>
+
+      <!-- Flash Messages -->
       {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
-          <div class="flash-messages">
+          <div class="flash-messages" style="margin-bottom: 1.25rem;">
             {% for category, message in messages %}
-              <div class="alert alert-{{ category }}" style="font-size: 0.85rem; padding: 0.75rem 1rem; border-radius: var(--radius-sm); margin-bottom: 1rem;">{{ message }}</div>
+              <div class="alert alert-{{ category }}" style="font-size: 0.85rem; padding: 0.75rem 1rem; border-radius: var(--radius-sm);">{{ message }}</div>
             {% endfor %}
           </div>
         {% endif %}
@@ -64,10 +85,10 @@
 
         <div style="margin-bottom: 1rem;">
           <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.35rem;">Password</label>
-          <div class="password-toggle-wrapper">
+          <div class="password-toggle-wrapper" style="position: relative;">
             <input type="password" id="reg-pass" name="password" required placeholder="Minimum 8 characters (letters & numbers)" style="width: 100%; padding: 0.65rem 2.5rem 0.65rem 2.25rem; font-size: 0.9rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); outline: none; font-family: inherit;">
             <i data-lucide="lock" style="position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--text-tertiary);"></i>
-            <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('reg-pass', this)" title="Show/Hide Password">
+            <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('reg-pass', this)" title="Toggle password visibility" style="position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--text-tertiary);">
               <i data-lucide="eye" style="width: 16px; height: 16px;"></i>
             </button>
           </div>
@@ -75,10 +96,10 @@
 
         <div style="margin-bottom: 1.5rem;">
           <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.35rem;">Confirm Password</label>
-          <div class="password-toggle-wrapper">
+          <div class="password-toggle-wrapper" style="position: relative;">
             <input type="password" id="reg-confirm" name="confirm_password" required placeholder="Re-enter password" style="width: 100%; padding: 0.65rem 2.5rem 0.65rem 2.25rem; font-size: 0.9rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); outline: none; font-family: inherit;">
             <i data-lucide="check-check" style="position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--text-tertiary);"></i>
-            <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('reg-confirm', this)" title="Show/Hide Password">
+            <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('reg-confirm', this)" title="Toggle password visibility" style="position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--text-tertiary);">
               <i data-lucide="eye" style="width: 16px; height: 16px;"></i>
             </button>
           </div>
@@ -90,7 +111,7 @@
       </form>
 
       <div style="text-align: center; margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--border-subtle); font-size: 0.88rem; color: var(--text-secondary);">
-        Already have an account? <a href="{{ url_for('main.login') }}" style="color: var(--primary); font-weight: 600; text-decoration: none;">Login here</a>
+        Already have an account? <a href="{{ url_for('main.login') }}" style="color: var(--primary); font-weight: 600; text-decoration: none;">Sign In</a>
       </div>
     </div>
   </div>

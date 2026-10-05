@@ -3,49 +3,142 @@
 {% block title %}Scan Barcode - EAT SAFE{% endblock %}
 
 {% block page_title %}Barcode Product Lookup{% endblock %}
-{% block page_desc %}Lookup packaged food details via barcode or UPCA/EAN number{% endblock %}
+{% block page_desc %}Lookup packaged food details via camera scan or manual EAN/UPC barcode number{% endblock %}
 
 {% block content %}
 
-<a href="{{ url_for('main.dashboard') }}" class="back-link">
-  <i data-lucide="arrow-left"></i> Back to Dashboard
+<!-- HTML5 QR / Barcode Scanner CDN -->
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+
+<a href="{{ url_for('main.dashboard') if current_user else url_for('main.index') }}" class="back-link">
+  <i data-lucide="arrow-left"></i> Back
 </a>
 
-<div class="saas-card" style="max-width: 540px; margin: 1rem auto; padding: 2rem;">
+<div class="saas-card" style="max-width: 600px; margin: 1rem auto; padding: 2rem;">
   <div style="text-align: center; margin-bottom: 1.5rem;">
-    <div style="width: 56px; height: 56px; border-radius: 50%; background-color: var(--primary-light); color: var(--primary); display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;">
-      <i data-lucide="barcode" style="width: 28px; height: 28px;"></i>
+    <div style="width: 60px; height: 60px; border-radius: 50%; background-color: var(--primary-light); color: var(--primary); display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; border: 1px solid var(--primary-border);">
+      <i data-lucide="barcode" style="width: 32px; height: 32px;"></i>
     </div>
-    <h2 style="font-size: 1.3rem; font-weight: 800; color: var(--text-primary);">Lookup Food Barcode</h2>
+    <h2 style="font-size: 1.4rem; font-weight: 800; color: var(--text-primary);">Food Barcode Scanner</h2>
     <p style="font-size: 0.88rem; color: var(--text-secondary); margin-top: 0.25rem;">
-      Enter the EAN/UPC barcode numbers printed on the packaging to query public product databases.
+      Point your camera at the food packaging barcode or enter the digits below.
     </p>
   </div>
 
-  <form action="{{ url_for('main.scan_barcode') }}" method="POST">
+  <!-- Camera Live Scanner Section -->
+  <div style="text-align: center; margin-bottom: 1.5rem;">
+    <button type="button" id="start-camera-btn" class="btn btn-secondary" onclick="toggleCameraScanner()" style="padding: 0.75rem 1.25rem; font-weight: 600;">
+      <i data-lucide="camera" style="width: 18px; height: 18px;"></i> <span id="camera-btn-text">Start Live Camera Barcode Scanner</span>
+    </button>
+  </div>
+
+  <!-- Camera Container Viewfinder -->
+  <div id="camera-status-msg" style="display: none; font-size: 0.85rem; padding: 0.75rem 1rem; border-radius: var(--radius-sm); margin-bottom: 1rem; text-align: center;"></div>
+  <div id="reader" style="width: 100%; max-width: 480px; margin: 0 auto 1.5rem; border-radius: var(--radius-md); overflow: hidden; border: 2px dashed var(--primary-border); display: none;"></div>
+
+  <div style="display: flex; align-items: center; margin: 1.5rem 0;">
+    <div style="flex: 1; height: 1px; background: var(--border-subtle);"></div>
+    <span style="padding: 0 1rem; font-size: 0.78rem; font-weight: 700; color: var(--text-tertiary); text-transform: uppercase;">or enter code manually</span>
+    <div style="flex: 1; height: 1px; background: var(--border-subtle);"></div>
+  </div>
+
+  <!-- Manual Barcode Entry Form -->
+  <form id="barcode-form" action="{{ url_for('main.scan_barcode') }}" method="POST">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
     <div class="form-group" style="margin-bottom: 1.5rem;">
-      <label for="barcode" class="form-label">Barcode Number (EAN-13 / UPC-A)</label>
+      <label for="barcode" class="form-label" style="font-size: 0.85rem; font-weight: 600;">Barcode Number (EAN-13 / EAN-8 / UPC-A / GTIN)</label>
       <div style="position: relative;">
-        <input type="text" id="barcode" name="barcode" class="form-control" placeholder="e.g., 8901058852393" value="{{ barcode or '' }}" required autofocus style="padding-left: 2.75rem; font-family: monospace; font-size: 1.1rem; letter-spacing: 1px;">
+        <input type="text" id="barcode" name="barcode" class="form-control" placeholder="e.g., 8901058852393" value="{{ barcode or '' }}" required autofocus style="padding-left: 2.75rem; font-family: monospace; font-size: 1.1rem; letter-spacing: 1px; width: 100%;">
         <i data-lucide="scan" style="position: absolute; left: 0.85rem; top: 50%; transform: translateY(-50%); color: var(--text-tertiary); width: 20px; height: 20px;"></i>
       </div>
     </div>
 
-    <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center;">
+    <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 0.75rem;">
       <i data-lucide="search"></i> Lookup Product Data
     </button>
   </form>
 
   <div style="margin-top: 2rem; padding-top: 1.25rem; border-top: 1px solid var(--border-subtle); text-align: center;">
     <p style="font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 0.75rem;">
-      Don't have a barcode or product not found?
+      Need to scan an ingredient list label instead?
     </p>
     <a href="{{ url_for('main.scan') }}" class="btn btn-secondary btn-sm">
-      <i data-lucide="camera"></i> Take Photo of Ingredient Label
+      <i data-lucide="camera"></i> Take Photo of Food Ingredient Label
     </a>
   </div>
 </div>
+
+<script>
+  let html5QrCode = null;
+  let isScanning = false;
+
+  function toggleCameraScanner() {
+    if (isScanning) {
+      stopCameraScanner();
+    } else {
+      startCameraScanner();
+    }
+  }
+
+  function startCameraScanner() {
+    const readerDiv = document.getElementById('reader');
+    const msgDiv = document.getElementById('camera-status-msg');
+    const btnText = document.getElementById('camera-btn-text');
+
+    readerDiv.style.display = 'block';
+    msgDiv.style.display = 'none';
+
+    html5QrCode = new Html5Qrcode("reader");
+    const config = { fps: 10, qrbox: { width: 280, height: 180 } };
+
+    html5QrCode.start(
+      { facingMode: "environment" },
+      config,
+      (decodedText, decodedResult) => {
+        // Success callback
+        console.log(`Barcode detected: ${decodedText}`);
+        document.getElementById('barcode').value = decodedText;
+
+        // Play feedback tone / highlight
+        msgDiv.className = 'alert alert-success';
+        msgDiv.innerHTML = `✓ Barcode Scanned: <strong>${decodedText}</strong>. Looking up product...`;
+        msgDiv.style.display = 'block';
+
+        stopCameraScanner();
+        
+        // Auto-submit form
+        setTimeout(() => {
+          document.getElementById('barcode-form').submit();
+        }, 400);
+      },
+      (errorMessage) => {
+        // Scan frame attempt error - quiet
+      }
+    ).then(() => {
+      isScanning = true;
+      btnText.textContent = "Stop Camera Scanner";
+    }).catch(err => {
+      console.error("Camera access failed:", err);
+      readerDiv.style.display = 'none';
+      msgDiv.className = 'alert alert-danger';
+      msgDiv.innerHTML = "Camera permission denied or camera not found. Please enter barcode number manually.";
+      msgDiv.style.display = 'block';
+      isScanning = false;
+    });
+  }
+
+  function stopCameraScanner() {
+    if (html5QrCode && isScanning) {
+      html5QrCode.stop().then(() => {
+        document.getElementById('reader').style.display = 'none';
+        document.getElementById('camera-btn-text').textContent = "Start Live Camera Barcode Scanner";
+        isScanning = false;
+      }).catch(err => {
+        console.error("Error stopping scanner:", err);
+      });
+    }
+  }
+</script>
 
 {% endblock %}

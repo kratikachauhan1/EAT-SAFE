@@ -3,7 +3,7 @@
 {% block title %}Settings - EAT SAFE{% endblock %}
 
 {% block page_title %}Account Settings{% endblock %}
-{% block page_desc %}Manage your profile details, security settings, privacy controls, and data export{% endblock %}
+{% block page_desc %}Manage your account profile, security credentials, data privacy, preferences, and safety{% endblock %}
 
 {% block content %}
 
@@ -13,13 +13,13 @@
 
 <div style="max-width: 960px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.5rem;">
 
-  <!-- Section A: Account Overview Card -->
+  <!-- Section A: Account Header Card -->
   <div class="saas-card">
     <div class="saas-card-header">
       <h3 class="saas-card-title">
         <i data-lucide="user-check"></i> Account Overview
       </h3>
-      <span class="badge badge-success"><span class="status-dot"></span> Account Active</span>
+      <span class="badge badge-success"><span class="status-dot"></span> Profile Active</span>
     </div>
 
     <div style="display: flex; align-items: center; gap: 1.25rem; padding: 0.5rem 0; flex-wrap: wrap;">
@@ -36,16 +36,34 @@
           <span><strong>Email:</strong> {{ user.email }}</span>
         </div>
         <div style="font-size: 0.78rem; color: var(--text-tertiary); margin-top: 0.25rem;">
-          Account Registered: {{ str(user.created_at)[:10] if user.created_at else 'Active' }}
+          Account Created: {{ str(user.created_at)[:10] if user.created_at else 'Active' }}
         </div>
       </div>
     </div>
   </div>
 
-  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem;">
+  <!-- Settings Navigation Tabs -->
+  <div class="settings-nav-tabs" style="display: flex; gap: 0.5rem; overflow-x: auto; border-bottom: 2px solid var(--border-subtle); padding-bottom: 0.5rem;">
+    <button class="settings-tab-btn active" onclick="switchSettingsTab('account', this)">
+      <i data-lucide="user"></i> Account
+    </button>
+    <button class="settings-tab-btn" onclick="switchSettingsTab('security', this)">
+      <i data-lucide="key-round"></i> Security
+    </button>
+    <button class="settings-tab-btn" onclick="switchSettingsTab('privacy', this)">
+      <i data-lucide="download-cloud"></i> Privacy & Export
+    </button>
+    <button class="settings-tab-btn" onclick="switchSettingsTab('preferences', this)">
+      <i data-lucide="sliders"></i> Preferences
+    </button>
+    <button class="settings-tab-btn danger-tab" onclick="switchSettingsTab('safety', this)">
+      <i data-lucide="alert-triangle"></i> Safety & Deletion
+    </button>
+  </div>
 
-    <!-- Section B: Edit Profile -->
-    <div class="saas-card" style="margin-bottom: 0;">
+  <!-- TAB 1: ACCOUNT PROFILE -->
+  <div id="tab-account" class="settings-tab-panel">
+    <div class="saas-card">
       <div class="saas-card-header">
         <h3 class="saas-card-title">
           <i data-lucide="user-cog"></i> Profile Information
@@ -70,21 +88,23 @@
           <input type="email" name="email" value="{{ user.email or '' }}" required style="width: 100%; padding: 0.65rem 0.85rem; font-size: 0.9rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); outline: none; font-family: inherit;">
         </div>
 
-        <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center;">
+        <button type="submit" class="btn btn-primary">
           <i data-lucide="save"></i> Save Profile Changes
         </button>
       </form>
     </div>
+  </div>
 
-    <!-- Section C: Security & Password -->
-    <div class="saas-card" style="margin-bottom: 0;">
+  <!-- TAB 2: SECURITY & PASSWORD -->
+  <div id="tab-security" class="settings-tab-panel" style="display: none;">
+    <div class="saas-card">
       <div class="saas-card-header">
         <h3 class="saas-card-title">
-          <i data-lucide="key-round"></i> Security & Password
+          <i data-lucide="shield-check"></i> Password & Credentials
         </h3>
       </div>
 
-      <form action="{{ url_for('main.change_password') }}" method="POST">
+      <form action="{{ url_for('main.change_password') }}" method="POST" style="max-width: 500px;">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
         <div style="margin-bottom: 1rem;">
@@ -94,7 +114,7 @@
 
         <div style="margin-bottom: 1rem;">
           <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.35rem;">New Password</label>
-          <input type="password" name="new_password" required placeholder="Minimum 8 characters" style="width: 100%; padding: 0.65rem 0.85rem; font-size: 0.9rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); outline: none; font-family: inherit;">
+          <input type="password" name="new_password" required placeholder="Minimum 8 characters (letters & numbers)" style="width: 100%; padding: 0.65rem 0.85rem; font-size: 0.9rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); outline: none; font-family: inherit;">
         </div>
 
         <div style="margin-bottom: 1.25rem;">
@@ -102,62 +122,149 @@
           <input type="password" name="confirm_new_password" required placeholder="Re-enter new password" style="width: 100%; padding: 0.65rem 0.85rem; font-size: 0.9rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); outline: none; font-family: inherit;">
         </div>
 
-        <button type="submit" class="btn btn-secondary" style="width: 100%; justify-content: center;">
-          <i data-lucide="shield-check"></i> Update Password
+        <button type="submit" class="btn btn-secondary">
+          <i data-lucide="key"></i> Update Password
         </button>
       </form>
     </div>
-
   </div>
 
-  <!-- Section D: Data Privacy & Export -->
-  <div class="saas-card">
-    <div class="saas-card-header">
-      <h3 class="saas-card-title">
-        <i data-lucide="download-cloud"></i> Privacy & Data Export
-      </h3>
-    </div>
-
-    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-      <div>
-        <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--text-primary); margin: 0 0 0.2rem;">
-          Export My Data (GDPR Compliant)
-        </h4>
-        <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0;">
-          Download a complete JSON export of your account profile, custom terms, monitored allergies, scan history, and saved products.
-        </p>
+  <!-- TAB 3: PRIVACY & DATA EXPORT -->
+  <div id="tab-privacy" class="settings-tab-panel" style="display: none;">
+    <div class="saas-card">
+      <div class="saas-card-header">
+        <h3 class="saas-card-title">
+          <i data-lucide="download-cloud"></i> GDPR Data Export & Ownership
+        </h3>
       </div>
 
-      <a href="{{ url_for('main.export_data_action') }}" class="btn btn-secondary btn-sm">
-        <i data-lucide="download"></i> Download Export (JSON)
-      </a>
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1.5rem;">
+        <div style="flex: 1; min-width: 280px;">
+          <h4 style="font-size: 1rem; font-weight: 700; color: var(--text-primary); margin: 0 0 0.35rem;">
+            Export Complete Personal Record (JSON)
+          </h4>
+          <p style="font-size: 0.88rem; color: var(--text-secondary); margin: 0; line-height: 1.5;">
+            Download a portable, machine-readable JSON copy of your account profile details, monitored allergens, custom keywords, complete scan history, and saved product list.
+          </p>
+        </div>
+
+        <a href="{{ url_for('main.export_data_action') }}" class="btn btn-secondary" style="padding: 0.75rem 1.25rem;">
+          <i data-lucide="download"></i> Download Export File
+        </a>
+      </div>
     </div>
   </div>
 
-  <!-- Section E: Danger Zone (Account Deletion) -->
-  <div class="saas-card" style="border-color: var(--border-danger); background-color: #fffafb;">
-    <div class="saas-card-header">
-      <h3 class="saas-card-title" style="color: var(--text-danger);">
-        <i data-lucide="alert-triangle" style="color: var(--color-danger);"></i> Account Management (Danger Zone)
-      </h3>
-    </div>
-
-    <p style="font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 1rem;">
-      Permanently delete your account, allergy profile, custom monitored terms, scan history, saved products, and uploaded image files from storage. This action cannot be undone.
-    </p>
-
-    <form action="{{ url_for('main.delete_account') }}" method="POST" style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-      <div style="flex: 1; min-width: 250px;">
-        <label style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-danger); margin-bottom: 0.25rem;">Type DELETE to confirm:</label>
-        <input type="text" name="confirm_delete" required placeholder="DELETE" style="width: 100%; padding: 0.6rem 0.85rem; font-size: 0.9rem; border: 1px solid var(--border-danger); border-radius: var(--radius-md); outline: none;">
+  <!-- TAB 4: PREFERENCES -->
+  <div id="tab-preferences" class="settings-tab-panel" style="display: none;">
+    <div class="saas-card">
+      <div class="saas-card-header">
+        <h3 class="saas-card-title">
+          <i data-lucide="sliders"></i> Screening & Alert Preferences
+        </h3>
       </div>
-      <button type="submit" class="btn" style="background-color: var(--color-danger); color: white; margin-top: 1.25rem;" onclick="return confirm('Are you sure you want to permanently delete your account and all stored image files? This action CANNOT be undone!');">
-        <i data-lucide="user-x"></i> Delete Account Permanently
+
+      <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-subtle); padding-bottom: 1rem;">
+          <div>
+            <strong style="color: var(--text-primary); font-size: 0.92rem;">Precautionary Caution Badges</strong>
+            <p style="font-size: 0.82rem; color: var(--text-secondary); margin: 0;">Show warnings for 'may contain' or cross-contact facility statements.</p>
+          </div>
+          <input type="checkbox" checked disabled style="accent-color: var(--primary); transform: scale(1.2);">
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <strong style="color: var(--text-primary); font-size: 0.92rem;">Fuzzy Derivative Matching (FSSAI/FDA)</strong>
+            <p style="font-size: 0.82rem; color: var(--text-secondary); margin: 0;">Match chemical/scientific ingredient names (e.g. Casein -> Milk).</p>
+          </div>
+          <input type="checkbox" checked disabled style="accent-color: var(--primary); transform: scale(1.2);">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 5: SAFETY & DANGER ZONE -->
+  <div id="tab-safety" class="settings-tab-panel" style="display: none;">
+    <div class="saas-card" style="border-color: var(--border-danger); background-color: #fffafb;">
+      <div class="saas-card-header">
+        <h3 class="saas-card-title" style="color: var(--text-danger);">
+          <i data-lucide="alert-triangle" style="color: var(--color-danger);"></i> Account Deletion & Data Removal
+        </h3>
+      </div>
+
+      <p style="font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 1.5rem; line-height: 1.5;">
+        Permanently purge your EAT SAFE account, custom allergen profiles, scan records, saved products, and uploaded label images. This action cannot be undone.
+      </p>
+
+      <button type="button" class="btn" style="background-color: var(--color-danger); color: white;" onclick="openDeleteModal()">
+        <i data-lucide="user-x"></i> Delete Account Permanently...
       </button>
-    </form>
+    </div>
   </div>
 
 </div>
+
+<!-- Multi-Step Account Deletion Modal Backdrop -->
+<div id="delete-modal" class="modal-backdrop" style="display: none;">
+  <div class="modal-dialog" style="max-width: 480px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-subtle);">
+      <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--color-danger); display: flex; align-items: center; gap: 0.5rem;">
+        <i data-lucide="alert-triangle" style="width: 20px; height: 20px;"></i> Confirm Account Deletion
+      </h3>
+      <button type="button" onclick="closeDeleteModal()" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color: var(--text-tertiary);">&times;</button>
+    </div>
+
+    <p style="font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 1.25rem; line-height: 1.5;">
+      You are about to permanently delete your account (<strong>@{{ user.username }}</strong>). All associated scan records and uploaded packaging images will be erased.
+    </p>
+
+    <form action="{{ url_for('main.delete_account') }}" method="POST">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <div style="margin-bottom: 1rem;">
+        <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.35rem;">Current Password Re-Authentication</label>
+        <input type="password" name="password" required placeholder="Enter current password" style="width: 100%; padding: 0.65rem 0.85rem; font-size: 0.9rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); outline: none;">
+      </div>
+
+      <div style="margin-bottom: 1.5rem;">
+        <label style="display: block; font-size: 0.82rem; font-weight: 600; color: var(--color-danger); margin-bottom: 0.35rem;">Type DELETE to confirm:</label>
+        <input type="text" name="confirm_delete" required placeholder="DELETE" style="width: 100%; padding: 0.65rem 0.85rem; font-size: 0.9rem; border: 1px solid var(--border-danger); border-radius: var(--radius-md); outline: none;">
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+        <button type="button" class="btn btn-secondary" onclick="closeDeleteModal()">Cancel</button>
+        <button type="submit" class="btn" style="background-color: var(--color-danger); color: white;">
+          <i data-lucide="trash-2"></i> Confirm Permanent Deletion
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  function switchSettingsTab(tabName, btn) {
+    // Hide all panels
+    const panels = document.querySelectorAll('.settings-tab-panel');
+    panels.forEach(p => p.style.display = 'none');
+
+    // Deactivate all tab buttons
+    const btns = document.querySelectorAll('.settings-tab-btn');
+    btns.forEach(b => b.classList.remove('active'));
+
+    // Show active panel & button
+    const activePanel = document.getElementById('tab-' + tabName);
+    if (activePanel) activePanel.style.display = 'block';
+    if (btn) btn.classList.add('active');
+  }
+
+  function openDeleteModal() {
+    document.getElementById('delete-modal').style.display = 'flex';
+  }
+
+  function closeDeleteModal() {
+    document.getElementById('delete-modal').style.display = 'none';
+  }
+</script>
+
 {% endblock %}
