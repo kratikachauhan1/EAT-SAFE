@@ -123,6 +123,21 @@ def create_app(config_overrides=None):
             "status": "ok"
         }), 200
 
+    # Production Diagnostic Debug Endpoint
+    @app.route('/__deployment_debug')
+    def deployment_debug():
+        return jsonify({
+            "application": "EAT SAFE",
+            "environment": env,
+            "git_commit": build_commit,
+            "build_version": f"2.0.0-{build_commit}",
+            "python_version": sys.version,
+            "application_module": app.__module__,
+            "template_directory": app.template_folder,
+            "static_directory": app.static_folder,
+            "status": "ok"
+        }), 200
+
     # Health & Readiness Monitoring Endpoints
     @app.route('/health')
     @app.route('/ready')
