@@ -68,11 +68,23 @@ body {
   background-color: var(--bg-page);
   color: var(--text-primary);
   font-family: var(--font-sans);
-  font-size: 14px;
-  line-height: 1.5;
+  font-size: 15px;
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   display: flex;
   min-height: 100vh;
+}
+
+.mobile-menu-toggle {
+  display: none !important;
+}
+
+@media (max-width: 900px) {
+  .mobile-menu-toggle {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+  }
 }
 
 /* App Shell Layout */
