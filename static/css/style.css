@@ -1282,3 +1282,126 @@ body.public-layout {
 .settings-tab-btn.danger-tab.active i {
   color: var(--color-danger);
 }
+
+
+/* ===================================================
+   MOBILE NAVIGATION DRAWER OVERLAY & RESPONSIVE TABLES
+   =================================================== */
+
+.nav-drawer-backdrop {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(3px);
+  z-index: 900;
+  transition: opacity 0.25s ease;
+}
+
+.nav-drawer-backdrop.active {
+  display: block;
+}
+
+.mobile-drawer-header {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 1rem;
+  margin-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.drawer-close-btn {
+  background: none;
+  border: none;
+  font-size: 1.6rem;
+  line-height: 1;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-sm);
+}
+
+.drawer-close-btn:hover {
+  background-color: var(--primary-light);
+  color: var(--primary);
+}
+
+.mobile-only-inline {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .mobile-drawer-header {
+    display: flex;
+  }
+
+  .mobile-only-inline {
+    display: inline-block;
+  }
+
+  .public-nav-menu {
+    display: none;
+    position: fixed;
+    top: 0;
+    right: -300px;
+    width: 290px;
+    height: 100vh;
+    background: var(--bg-surface);
+    flex-direction: column;
+    padding: 1.5rem 1.25rem;
+    box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
+    z-index: 995;
+    transition: transform 0.3s ease;
+    overflow-y: auto;
+  }
+
+  .public-nav-menu.mobile-active {
+    display: flex;
+    transform: translateX(-300px);
+  }
+
+  .mobile-auth-links {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--border-subtle);
+  }
+}
+
+/* Responsive History Table to Card View on Small Screens */
+@media (max-width: 640px) {
+  .saas-table thead {
+    display: none;
+  }
+  .saas-table, .saas-table tbody, .saas-table tr, .saas-table td {
+    display: block;
+    width: 100%;
+  }
+  .saas-table tr {
+    margin-bottom: 1rem;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 1rem;
+    box-shadow: var(--shadow-sm);
+  }
+  .saas-table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.4rem 0;
+    border: none;
+    border-bottom: 1px dashed var(--border-subtle);
+  }
+  .saas-table td:last-child {
+    border-bottom: none;
+    padding-top: 0.75rem;
+    justify-content: flex-end;
+  }
+}

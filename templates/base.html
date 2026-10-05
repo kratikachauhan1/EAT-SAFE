@@ -15,6 +15,9 @@
 </head>
 <body class="{% if not current_user %}public-layout{% endif %}">
 
+  <!-- Global Backdrop Overlay for Mobile Drawers -->
+  <div id="drawer-backdrop" class="nav-drawer-backdrop" onclick="closeAllDrawers()"></div>
+
   {% if not current_user %}
     <!-- PUBLIC SINGLE-ROW TOP NAVBAR (Desktop & Mobile Responsive) -->
     <header class="public-top-navbar">
@@ -28,21 +31,34 @@
         </a>
 
         <nav class="public-nav-menu" id="public-nav-menu">
-          <a href="{{ url_for('main.index') }}" class="public-nav-item {% if request.endpoint == 'main.index' %}active{% endif %}">
+          <div class="mobile-drawer-header">
+            <div class="brand-title" style="font-size: 1.1rem;">EAT <span>SAFE</span> MENU</div>
+            <button type="button" class="drawer-close-btn" onclick="closeAllDrawers()">&times;</button>
+          </div>
+          <a href="{{ url_for('main.index') }}" class="public-nav-item {% if request.endpoint == 'main.index' %}active{% endif %}" onclick="closeAllDrawers()">
             <i data-lucide="home"></i> Home
           </a>
-          <a href="{{ url_for('main.scan') }}" class="public-nav-item {% if request.endpoint == 'main.scan' %}active{% endif %}">
+          <a href="{{ url_for('main.scan') }}" class="public-nav-item {% if request.endpoint == 'main.scan' %}active{% endif %}" onclick="closeAllDrawers()">
             <i data-lucide="scan"></i> Scan Label
           </a>
-          <a href="{{ url_for('main.scan_barcode') }}" class="public-nav-item {% if request.endpoint == 'main.scan_barcode' %}active{% endif %}">
+          <a href="{{ url_for('main.scan_barcode') }}" class="public-nav-item {% if request.endpoint == 'main.scan_barcode' %}active{% endif %}" onclick="closeAllDrawers()">
             <i data-lucide="barcode"></i> Scan Barcode
           </a>
-          <a href="{{ url_for('main.how_it_works') }}" class="public-nav-item {% if request.endpoint == 'main.how_it_works' %}active{% endif %}">
+          <a href="{{ url_for('main.how_it_works') }}" class="public-nav-item {% if request.endpoint == 'main.how_it_works' %}active{% endif %}" onclick="closeAllDrawers()">
             <i data-lucide="cpu"></i> How It Works
           </a>
-          <a href="{{ url_for('main.about') }}" class="public-nav-item {% if request.endpoint == 'main.about' %}active{% endif %}">
+          <a href="{{ url_for('main.about') }}" class="public-nav-item {% if request.endpoint == 'main.about' %}active{% endif %}" onclick="closeAllDrawers()">
             <i data-lucide="info"></i> About
           </a>
+
+          <div class="mobile-auth-links">
+            <a href="{{ url_for('main.login') }}" class="btn btn-secondary nav-auth-btn" style="justify-content: center; width: 100%;" onclick="closeAllDrawers()">
+              <i data-lucide="log-in" style="width: 16px; height: 16px;"></i> Sign In
+            </a>
+            <a href="{{ url_for('main.register') }}" class="btn btn-primary nav-auth-btn" style="justify-content: center; width: 100%;" onclick="closeAllDrawers()">
+              <i data-lucide="user-plus" style="width: 16px; height: 16px;"></i> Create Account
+            </a>
+          </div>
         </nav>
 
         <div class="public-auth-group">
@@ -66,7 +82,7 @@
     {% if current_user %}
       <!-- LEFT SIDEBAR (Authenticated Workspace Desktop / Mobile Drawer) -->
       <aside class="sidebar" id="app-sidebar">
-        <div class="sidebar-header">
+        <div class="sidebar-header" style="justify-content: space-between;">
           <a href="{{ url_for('main.dashboard') }}" style="display: flex; align-items: center; gap: 0.75rem; text-decoration: none; color: inherit;">
             <img src="{{ url_for('static', filename='images/logo.png') }}" alt="EAT SAFE Logo" class="sidebar-logo-img">
             <div>
@@ -74,34 +90,35 @@
               <div class="sidebar-brand-sub">ASSISTIVE FOOD LABEL SCREENING</div>
             </div>
           </a>
+          <button type="button" class="drawer-close-btn mobile-only-inline" onclick="closeAllDrawers()">&times;</button>
         </div>
 
         <nav class="sidebar-nav">
-          <a href="{{ url_for('main.dashboard') }}" class="sidebar-link {% if request.endpoint == 'main.dashboard' %}active{% endif %}">
+          <a href="{{ url_for('main.dashboard') }}" class="sidebar-link {% if request.endpoint == 'main.dashboard' %}active{% endif %}" onclick="closeAllDrawers()">
             <i data-lucide="layout-dashboard"></i>
             <span>Dashboard</span>
           </a>
-          <a href="{{ url_for('main.scan') }}" class="sidebar-link {% if request.endpoint == 'main.scan' %}active{% endif %}">
+          <a href="{{ url_for('main.scan') }}" class="sidebar-link {% if request.endpoint == 'main.scan' %}active{% endif %}" onclick="closeAllDrawers()">
             <i data-lucide="scan-line"></i>
             <span>Scan Label</span>
           </a>
-          <a href="{{ url_for('main.scan_barcode') }}" class="sidebar-link {% if request.endpoint == 'main.scan_barcode' %}active{% endif %}">
+          <a href="{{ url_for('main.scan_barcode') }}" class="sidebar-link {% if request.endpoint == 'main.scan_barcode' %}active{% endif %}" onclick="closeAllDrawers()">
             <i data-lucide="barcode"></i>
             <span>Scan Barcode</span>
           </a>
-          <a href="{{ url_for('main.profile') }}" class="sidebar-link {% if request.endpoint in ['main.profile', 'main.profile_custom'] %}active{% endif %}">
+          <a href="{{ url_for('main.profile') }}" class="sidebar-link {% if request.endpoint in ['main.profile', 'main.profile_custom'] %}active{% endif %}" onclick="closeAllDrawers()">
             <i data-lucide="shield-check"></i>
             <span>Allergy Profile</span>
           </a>
-          <a href="{{ url_for('main.saved_products') }}" class="sidebar-link {% if request.endpoint == 'main.saved_products' %}active{% endif %}">
+          <a href="{{ url_for('main.saved_products') }}" class="sidebar-link {% if request.endpoint == 'main.saved_products' %}active{% endif %}" onclick="closeAllDrawers()">
             <i data-lucide="bookmark"></i>
             <span>Saved Products</span>
           </a>
-          <a href="{{ url_for('main.history') }}" class="sidebar-link {% if request.endpoint == 'main.history' %}active{% endif %}">
+          <a href="{{ url_for('main.history') }}" class="sidebar-link {% if request.endpoint == 'main.history' %}active{% endif %}" onclick="closeAllDrawers()">
             <i data-lucide="history"></i>
             <span>Scan History</span>
           </a>
-          <a href="{{ url_for('main.settings') }}" class="sidebar-link {% if request.endpoint in ['main.settings', 'main.update_profile', 'main.change_password'] %}active{% endif %}">
+          <a href="{{ url_for('main.settings') }}" class="sidebar-link {% if request.endpoint in ['main.settings', 'main.update_profile', 'main.change_password'] %}active{% endif %}" onclick="closeAllDrawers()">
             <i data-lucide="settings"></i>
             <span>Settings</span>
           </a>
@@ -156,7 +173,7 @@
         </header>
       {% endif %}
 
-      <!-- Page Content -->
+      <!-- Page Content Container -->
       <div class="page-container">
         {% with messages = get_flashed_messages(with_categories=true) %}
           {% if messages %}
@@ -232,22 +249,43 @@
   <script src="{{ url_for('static', filename='js/main.js') }}"></script>
   <script>
     lucide.createIcons();
+
+    function closeAllDrawers() {
+      const publicMenu = document.getElementById('public-nav-menu');
+      if (publicMenu) publicMenu.classList.remove('mobile-active');
+
+      const sidebar = document.getElementById('app-sidebar');
+      if (sidebar) sidebar.classList.remove('mobile-open');
+
+      const backdrop = document.getElementById('drawer-backdrop');
+      if (backdrop) backdrop.classList.remove('active');
+    }
     
     // Sidebar toggle for logged in workspace
     const toggleBtn = document.getElementById('mobile-toggle-btn');
     if (toggleBtn) {
-      toggleBtn.addEventListener('click', () => {
+      toggleBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
         const sb = document.getElementById('app-sidebar');
-        if (sb) sb.classList.toggle('mobile-open');
+        const backdrop = document.getElementById('drawer-backdrop');
+        if (sb) {
+          sb.classList.toggle('mobile-open');
+          if (backdrop) backdrop.classList.toggle('active', sb.classList.contains('mobile-open'));
+        }
       });
     }
 
     // Public top nav mobile menu toggle
     const publicMobileBtn = document.getElementById('public-mobile-btn');
     if (publicMobileBtn) {
-      publicMobileBtn.addEventListener('click', () => {
+      publicMobileBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
         const menu = document.getElementById('public-nav-menu');
-        if (menu) menu.classList.toggle('mobile-active');
+        const backdrop = document.getElementById('drawer-backdrop');
+        if (menu) {
+          menu.classList.toggle('mobile-active');
+          if (backdrop) backdrop.classList.toggle('active', menu.classList.contains('mobile-active'));
+        }
       });
     }
   </script>
