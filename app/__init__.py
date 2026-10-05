@@ -18,6 +18,8 @@ handler.setFormatter(logging.Formatter('[%(asctime)s] %(levelname)s in %(module)
 if not logger.handlers:
     logger.addHandler(handler)
 
+from werkzeug.middleware.proxy_fix import ProxyFix
+
 csrf = CSRFProtect()
 
 def create_app(config_overrides=None):
@@ -26,6 +28,9 @@ def create_app(config_overrides=None):
         template_folder=os.path.join(os.path.dirname(os.path.dirname(__file__)), 'templates'),
         static_folder=os.path.join(os.path.dirname(os.path.dirname(__file__)), 'static')
     )
+
+    # Wrap WSGI app with ProxyFix so Flask recognizes HTTPS scheme, client IP, host, and port behind reverse proxies
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1, x_prefix=1)
 
     env = os.environ.get('FLASK_ENV', 'development')
     is_prod = env.lower() == 'production'
@@ -38,10 +43,19 @@ def create_app(config_overrides=None):
     if config_overrides:
         app.config.update(config_overrides)
 
-    # Security Cookies Configuration
+    # Mobile Device & Reverse Proxy Session Cookies Configuration
     app.config['SESSION_COOKIE_HTTPONLY'] = True
     app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-    app.config['SESSION_COOKIE_SECURE'] = is_prod
+    app.config['SESSION_REFRESH_EACH_REQUEST'] = True
+    
+    # Allow SESSION_COOKIE_SECURE override from env, or default to False to prevent mobile session drop on HTTP/mixed deployments
+    session_secure_env = os.environ.get('SESSION_COOKIE_SECURE', '').lower()
+    if session_secure_env == 'true':
+        app.config['SESSION_COOKIE_SECURE'] = True
+    elif session_secure_env == 'false':
+        app.config['SESSION_COOKIE_SECURE'] = False
+    else:
+        app.config['SESSION_COOKIE_SECURE'] = False
 
     # CSRF Configuration for Testing vs Production
     if 'WTF_CSRF_ENABLED' not in app.config:
@@ -84,7 +98,9 @@ def create_app(config_overrides=None):
         logger.warning(f"CSRF validation failed: {e.description}")
         if request.is_json:
             return jsonify({'status': 'error', 'message': 'CSRF token missing or invalid.'}), 400
-        return render_template('error.html', error_code=400, error_title="Security Token Expired", error_message="Your form security token has expired or is invalid. Please refresh the page and try again."), 400
+        from flask import flash, redirect, url_for
+        flash('Security token expired or session mismatch. Please try signing in again.', 'warning')
+        return redirect(url_for('main.login'))
 
     @app.errorhandler(400)
     def bad_request(e):

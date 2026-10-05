@@ -46,11 +46,12 @@ def get_db():
             
             if not use_pg:
                 os.makedirs(os.path.dirname(DATABASE_PATH), exist_ok=True)
-                g.db = sqlite3.connect(DATABASE_PATH, timeout=20.0)
+                g.db = sqlite3.connect(DATABASE_PATH, timeout=30.0)
                 g.db.row_factory = sqlite3.Row
                 g.db.execute("PRAGMA foreign_keys = ON")
                 try:
                     g.db.execute("PRAGMA journal_mode = WAL")
+                    g.db.execute("PRAGMA busy_timeout = 30000")
                 except sqlite3.OperationalError:
                     pass
                 g.db_type = 'sqlite'
@@ -66,11 +67,12 @@ def get_db():
             logger.error(f"Failed to connect to PostgreSQL database: {e}. Falling back to SQLite.")
             
     os.makedirs(os.path.dirname(DATABASE_PATH), exist_ok=True)
-    conn = sqlite3.connect(DATABASE_PATH, timeout=20.0)
+    conn = sqlite3.connect(DATABASE_PATH, timeout=30.0)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     try:
         conn.execute("PRAGMA journal_mode = WAL")
+        conn.execute("PRAGMA busy_timeout = 30000")
     except sqlite3.OperationalError:
         pass
     return conn
