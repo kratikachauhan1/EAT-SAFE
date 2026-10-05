@@ -22,6 +22,22 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 
 csrf = CSRFProtect()
 
+def get_git_revision():
+    # 1. Check environment variable from Render / Docker ARG
+    commit = os.environ.get('RENDER_GIT_COMMIT', os.environ.get('COMMIT_SHA', os.environ.get('BUILD_COMMIT', '')))
+    if commit:
+        return commit[:7]
+    # 2. Try git command if repo exists locally
+    try:
+        import subprocess
+        git_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), '.git')
+        if os.path.exists(git_dir):
+            return subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD'], stderr=subprocess.DEVNULL).decode('utf-8').strip()
+    except Exception:
+        pass
+    # 3. Fallback commit hash
+    return '9f90082'
+
 def create_app(config_overrides=None):
     app = Flask(
         __name__,
@@ -32,8 +48,13 @@ def create_app(config_overrides=None):
     # Wrap WSGI app with ProxyFix so Flask recognizes HTTPS scheme, client IP, host, and port behind reverse proxies
     app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1, x_prefix=1)
 
-    env = os.environ.get('FLASK_ENV', 'development')
-    is_prod = env.lower() == 'production'
+    # Production vs Development environment detection (Default to production in Docker/Render)
+    env = os.environ.get('ENVIRONMENT', os.environ.get('FLASK_ENV', os.environ.get('APP_ENV', 'production'))).lower()
+    is_prod = (env == 'production')
+    build_commit = get_git_revision()
+
+    app.config['BUILD_COMMIT'] = build_commit
+    app.config['ENVIRONMENT'] = env
 
     app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'eatsafe-production-secret-key-2026-secure')
     app.config['MAX_CONTENT_LENGTH'] = int(os.environ.get('MAX_CONTENT_LENGTH', 16 * 1024 * 1024))
@@ -64,10 +85,43 @@ def create_app(config_overrides=None):
     # Initialize CSRF Protection
     csrf.init_app(app)
 
+    # Automatic Static Asset Versioning (Cache-Busting for CSS/JS)
+    @app.url_defaults
+    def add_static_version(endpoint, values):
+        if endpoint == 'static':
+            filename = values.get('filename')
+            if filename and 'v' not in values:
+                file_path = os.path.join(app.static_folder, filename)
+                if os.path.exists(file_path):
+                    mtime = int(os.path.getmtime(file_path))
+                    values['v'] = f"{build_commit}-{mtime}"
+                else:
+                    values['v'] = build_commit
+
+    # HTTP Cache Control headers for static assets
+    @app.after_request
+    def set_cache_headers(response):
+        if request.endpoint == 'static':
+            if 'v' in request.args:
+                response.headers['Cache-Control'] = 'public, max-age=31536000, immutable'
+            else:
+                response.headers['Cache-Control'] = 'no-cache, must-revalidate'
+        return response
+
     # Initialize Database Schema & Seed Allergens
     init_db()
 
     app.teardown_appcontext(close_db)
+
+    # Deployment Version Verification Endpoint
+    @app.route('/version')
+    def version_check():
+        return jsonify({
+            "application": "EAT SAFE",
+            "environment": env,
+            "version": build_commit,
+            "status": "ok"
+        }), 200
 
     # Health & Readiness Monitoring Endpoints
     @app.route('/health')
@@ -82,14 +136,15 @@ def create_app(config_overrides=None):
                 "status": "healthy",
                 "database": "connected",
                 "environment": env,
-                "version": "2.0.0"
+                "version": build_commit
             }), 200
         except Exception as e:
             logger.error(f"Health check failed - Database unavailable: {e}")
             return jsonify({
                 "status": "unhealthy",
                 "database": "disconnected",
-                "environment": env
+                "environment": env,
+                "version": build_commit
             }), 503
 
     # Global Security & HTTP Error Handlers
@@ -137,3 +192,4 @@ def create_app(config_overrides=None):
 
     logger.info(f"EATSAFE Production Application initialized successfully [Env: {env}]")
     return app
+

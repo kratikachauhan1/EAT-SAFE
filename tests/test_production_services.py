@@ -156,3 +156,21 @@ def test_barcode_lookup_provider():
     found, data, msg = lookup_barcode("invalid_barcode_text")
     assert not found
     assert "digits only" in msg or "not found" in msg
+
+
+def test_version_and_health_endpoints(client):
+    """Verify /version and /health endpoints return valid JSON and status 200."""
+    res_version = client.get('/version')
+    assert res_version.status_code == 200
+    version_data = json.loads(res_version.data)
+    assert version_data['application'] == 'EAT SAFE'
+    assert 'version' in version_data
+    assert version_data['status'] == 'ok'
+
+    res_health = client.get('/health')
+    assert res_health.status_code == 200
+    health_data = json.loads(res_health.data)
+    assert health_data['status'] == 'healthy'
+    assert health_data['database'] == 'connected'
+    assert 'version' in health_data
+
