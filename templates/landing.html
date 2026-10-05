@@ -4,17 +4,17 @@
 
 {% block content %}
 <!-- Hero Section -->
-<div style="background: linear-gradient(135deg, #ffffff 0%, #f0f7ff 100%); border-radius: var(--radius-lg); padding: 3.5rem 2rem; border: 1px solid var(--border-subtle); margin-bottom: 2.5rem; text-align: center; box-shadow: var(--shadow-sm);">
-  <div style="max-width: 780px; margin: 0 auto;">
-    <div style="display: inline-flex; align-items: center; gap: 0.5rem; background: var(--primary-light); border: 1px solid var(--primary-border); padding: 0.35rem 0.85rem; border-radius: var(--radius-full); font-size: 0.82rem; font-weight: 700; color: var(--primary); margin-bottom: 1.25rem;">
+<div style="background: linear-gradient(135deg, #ffffff 0%, #f0f7ff 100%); border-radius: var(--radius-lg); padding: clamp(2rem, 4vw, 3.5rem) clamp(1rem, 3vw, 2.5rem); border: 1px solid var(--border-subtle); margin-bottom: 2.5rem; text-align: center; box-shadow: var(--shadow-sm);">
+  <div style="max-width: 900px; margin: 0 auto;">
+    <div style="display: inline-flex; align-items: center; gap: 0.5rem; background: var(--primary-light); border: 1px solid var(--primary-border); padding: 0.35rem 0.85rem; border-radius: var(--radius-full); font-size: 0.85rem; font-weight: 700; color: var(--primary); margin-bottom: 1.25rem;">
       <i data-lucide="shield-check" style="width: 16px; height: 16px;"></i> AI-Powered Food Packaging Screening
     </div>
 
-    <h1 style="font-size: 2.6rem; font-weight: 800; color: var(--text-primary); letter-spacing: -0.8px; line-height: 1.15; margin-bottom: 1rem;">
+    <h1 style="font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; color: var(--text-primary); letter-spacing: -0.8px; line-height: 1.15; margin-bottom: 1rem;">
       Let's check your food <span style="color: var(--primary);">before you eat.</span>
     </h1>
 
-    <p style="font-size: 1.1rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 2rem;">
+    <p style="font-size: clamp(1rem, 1.5vw, 1.2rem); color: var(--text-secondary); line-height: 1.6; margin-bottom: 2rem; max-width: 760px; margin-inline: auto;">
       Scan food product packaging, instantly extract ingredient lists with OCR, and screen against FSSAI-aligned allergen standards and your personal allergy profile.
     </p>
 
@@ -22,13 +22,15 @@
       <a href="{{ url_for('main.scan') }}" class="btn btn-primary btn-lg" style="padding: 0.85rem 1.75rem; font-size: 1rem;">
         <i data-lucide="scan"></i> Scan a Food Label Now
       </a>
-      <a href="{{ url_for('main.register') }}" class="btn btn-secondary btn-lg" style="padding: 0.85rem 1.75rem; font-size: 1rem;">
-        <i data-lucide="user-plus"></i> Create Free Account
-      </a>
+      {% if not current_user %}
+        <a href="{{ url_for('main.register') }}" class="btn btn-secondary btn-lg" style="padding: 0.85rem 1.75rem; font-size: 1rem;">
+          <i data-lucide="user-plus"></i> Create Free Account
+        </a>
+      {% endif %}
     </div>
 
     <!-- Micro Banner -->
-    <div style="display: flex; justify-content: center; gap: 2rem; margin-top: 2.5rem; font-size: 0.85rem; color: var(--text-secondary); flex-wrap: wrap;">
+    <div style="display: flex; justify-content: center; gap: 2rem; margin-top: 2.5rem; font-size: 0.88rem; color: var(--text-secondary); flex-wrap: wrap;">
       <div style="display: flex; align-items: center; gap: 0.4rem;">
         <i data-lucide="zap" style="color: var(--color-warning); width: 16px; height: 16px;"></i> Instant Guest Scanning
       </div>
@@ -45,8 +47,8 @@
 <!-- 3-Step Process Grid -->
 <div style="margin-bottom: 3rem;">
   <div style="text-align: center; margin-bottom: 2rem;">
-    <h2 style="font-size: 1.6rem; font-weight: 800; color: var(--text-primary);">How EAT SAFE Protects You</h2>
-    <p style="font-size: 0.92rem; color: var(--text-secondary); margin-top: 0.35rem;">Three simple steps to screen food packaging ingredients</p>
+    <h2 style="font-size: clamp(1.4rem, 3vw, 2rem); font-weight: 800; color: var(--text-primary);">How EAT SAFE Protects You</h2>
+    <p style="font-size: 0.95rem; color: var(--text-secondary); margin-top: 0.35rem;">Three simple steps to screen food packaging ingredients</p>
   </div>
 
   <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
@@ -56,7 +58,7 @@
         1
       </div>
       <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">Upload or Capture Label</h3>
-      <p style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.5;">
+      <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.6;">
         Take a picture of the ingredients list on any food package using your phone camera or upload a saved label photo.
       </p>
     </div>
@@ -67,7 +69,7 @@
         2
       </div>
       <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">AI Preprocessing & OCR</h3>
-      <p style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.5;">
+      <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.6;">
         OpenCV enhances contrast and sharpens text before Tesseract OCR extracts raw ingredient statements and calculates extraction confidence.
       </p>
     </div>
@@ -78,7 +80,7 @@
         3
       </div>
       <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">Personalised Risk Match</h3>
-      <p style="font-size: 0.88rem; color: var(--text-secondary); line-height: 1.5;">
+      <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.6;">
         NLP phrase parser intersects detected allergens with your personal allergy profile, highlighting explicit warnings vs precautionary cautions.
       </p>
     </div>
@@ -86,22 +88,22 @@
 </div>
 
 <!-- Guest vs Account Value Banner -->
-<div class="saas-card" style="background-color: var(--primary-light); border-color: var(--primary-border); padding: 2rem;">
-  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1.5rem;">
-    <div style="flex: 1; min-width: 280px;">
-      <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--primary); margin-bottom: 0.35rem;">Want Personalised Allergen Warnings?</h3>
-      <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 0;">
-        Create a free account to set your personal allergies (Milk, Peanuts, Gluten, Soy, etc.), save your scan history, and receive instant personalized risk alerts.
-      </p>
-    </div>
-    <div style="display: flex; gap: 0.75rem;">
-      <a href="{{ url_for('main.register') }}" class="btn btn-primary">
-        <i data-lucide="user-check"></i> Register Account
-      </a>
-      <a href="{{ url_for('main.login') }}" class="btn btn-secondary">
-        <i data-lucide="log-in"></i> Log In
-      </a>
+{% if not current_user %}
+  <div class="saas-card" style="background-color: var(--primary-light); border-color: var(--primary-border); padding: 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1.5rem;">
+      <div style="flex: 1; min-width: 280px;">
+        <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--primary); margin-bottom: 0.35rem;">Want Personalised Allergen Warnings?</h3>
+        <p style="font-size: 0.92rem; color: var(--text-secondary); margin-bottom: 0;">
+          Create a free account to set your personal allergies (Milk, Peanuts, Gluten, Soy, etc.), save your scan history, and receive instant personalized risk alerts.
+        </p>
+      </div>
+      <div style="display: flex; gap: 0.75rem;">
+        <a href="{{ url_for('main.register') }}" class="btn btn-primary">
+          <i data-lucide="user-check"></i> Register Free Account
+        </a>
+      </div>
     </div>
   </div>
-</div>
+{% endif %}
+
 {% endblock %}

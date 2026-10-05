@@ -19,7 +19,7 @@
   <div id="drawer-backdrop" class="nav-drawer-backdrop" onclick="closeAllDrawers()"></div>
 
   {% if not current_user %}
-    <!-- PUBLIC SINGLE-ROW TOP NAVBAR (Desktop & Mobile Responsive) -->
+    <!-- PUBLIC HEADER (Guest Application Shell) -->
     <header class="public-top-navbar">
       <div class="public-nav-container">
         <a href="{{ url_for('main.index') }}" class="public-nav-brand">
@@ -30,6 +30,7 @@
           </div>
         </a>
 
+        <!-- Navigation Menu -->
         <nav class="public-nav-menu" id="public-nav-menu">
           <div class="mobile-drawer-header">
             <div class="brand-title" style="font-size: 1.1rem;">EAT <span>SAFE</span> MENU</div>
@@ -50,18 +51,10 @@
           <a href="{{ url_for('main.about') }}" class="public-nav-item {% if request.endpoint == 'main.about' %}active{% endif %}" onclick="closeAllDrawers()">
             <i data-lucide="info"></i> About
           </a>
-
-          <div class="mobile-auth-links">
-            <a href="{{ url_for('main.login') }}" class="btn btn-secondary nav-auth-btn" style="justify-content: center; width: 100%;" onclick="closeAllDrawers()">
-              <i data-lucide="log-in" style="width: 16px; height: 16px;"></i> Sign In
-            </a>
-            <a href="{{ url_for('main.register') }}" class="btn btn-primary nav-auth-btn" style="justify-content: center; width: 100%;" onclick="closeAllDrawers()">
-              <i data-lucide="user-plus" style="width: 16px; height: 16px;"></i> Create Account
-            </a>
-          </div>
         </nav>
 
-        <div class="public-auth-group">
+        <!-- EXACTLY ONE Authentication Action Group -->
+        <div class="public-auth-group" id="public-auth-group">
           <a href="{{ url_for('main.login') }}" class="btn btn-secondary btn-sm nav-auth-btn">
             <i data-lucide="log-in" style="width: 15px; height: 15px;"></i> Sign In
           </a>
@@ -80,7 +73,7 @@
   <div class="app-shell {% if not current_user %}public-shell{% endif %}">
     
     {% if current_user %}
-      <!-- LEFT SIDEBAR (Authenticated Workspace Desktop / Mobile Drawer) -->
+      <!-- AUTHENTICATED SIDEBAR (Workspace Shell) -->
       <aside class="sidebar" id="app-sidebar">
         <div class="sidebar-header" style="justify-content: space-between;">
           <a href="{{ url_for('main.dashboard') }}" style="display: flex; align-items: center; gap: 0.75rem; text-decoration: none; color: inherit;">
@@ -141,11 +134,11 @@
       </aside>
     {% endif %}
 
-    <!-- MAIN AREA -->
+    <!-- MAIN CONTENT AREA -->
     <div class="main-content {% if not current_user %}public-main-content{% endif %}">
       
       {% if current_user %}
-        <!-- Workspace Top Header Bar for Authenticated User -->
+        <!-- AUTHENTICATED HEADER -->
         <header class="top-header">
           <div style="display: flex; align-items: center; gap: 1rem;">
             <button type="button" class="btn btn-secondary btn-sm mobile-menu-toggle" id="mobile-toggle-btn" aria-label="Toggle Navigation Menu">
