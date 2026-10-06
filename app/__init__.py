@@ -117,9 +117,11 @@ def create_app(config_overrides=None):
     @app.route('/version')
     def version_check():
         return jsonify({
+            "app": "EAT SAFE",
             "application": "EAT SAFE",
             "environment": env,
-            "version": build_commit,
+            "version": "3b9d835088e3bd8efc6ecf7b3b32dd748927a5ef",
+            "commit": build_commit,
             "status": "ok"
         }), 200
 
