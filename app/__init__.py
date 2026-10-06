@@ -98,7 +98,7 @@ def create_app(config_overrides=None):
                 else:
                     values['v'] = build_commit
 
-    # HTTP Cache Control headers for static assets
+    # HTTP Cache Control headers for static assets & dynamic HTML security
     @app.after_request
     def set_cache_headers(response):
         if request.endpoint == 'static':
@@ -106,6 +106,11 @@ def create_app(config_overrides=None):
                 response.headers['Cache-Control'] = 'public, max-age=31536000, immutable'
             else:
                 response.headers['Cache-Control'] = 'no-cache, must-revalidate'
+        else:
+            # Prevent caching of dynamic user HTML & API routes by CDNs, proxies, or shared browser history
+            response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0, private'
+            response.headers['Pragma'] = 'no-cache'
+            response.headers['Expires'] = '0'
         return response
 
     # Initialize Database Schema & Seed Allergens

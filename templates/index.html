@@ -17,20 +17,40 @@
       <h2 style="font-size: 1.5rem; font-weight: 800; color: var(--text-primary); margin-bottom: 0.35rem;">
         Check a food before you eat it.
       </h2>
-      <p style="color: var(--text-secondary); font-size: 0.9rem; max-width: 620px; margin-bottom: 1.1rem;">
-        Food label analysis personalised to your active allergy profile and custom monitored terms.
-      </p>
-      <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
-        <a href="{{ url_for('main.scan') }}" class="btn btn-primary">
-          <i data-lucide="camera"></i> Scan Food Label
-        </a>
-        <a href="{{ url_for('main.scan_barcode') }}" class="btn btn-secondary">
-          <i data-lucide="barcode"></i> Scan Barcode
-        </a>
-        <a href="{{ url_for('main.profile') }}" class="btn btn-secondary">
-          <i data-lucide="shield-check"></i> Allergy Profile
-        </a>
-      </div>
+      {% if is_guest %}
+        <p style="color: var(--text-secondary); font-size: 0.9rem; max-width: 620px; margin-bottom: 1.1rem;">
+          Food label analysis and instant AI allergen detection. Sign in to activate your personalized allergy profile and track scan history.
+        </p>
+        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
+          <a href="{{ url_for('main.scan') }}" class="btn btn-primary">
+            <i data-lucide="camera"></i> Scan Food Label
+          </a>
+          <a href="{{ url_for('main.scan_barcode') }}" class="btn btn-secondary">
+            <i data-lucide="barcode"></i> Scan Barcode
+          </a>
+          <a href="{{ url_for('main.login') }}" class="btn btn-secondary">
+            <i data-lucide="log-in"></i> Sign In
+          </a>
+          <a href="{{ url_for('main.register') }}" class="btn btn-secondary">
+            <i data-lucide="user-plus"></i> Create Profile
+          </a>
+        </div>
+      {% else %}
+        <p style="color: var(--text-secondary); font-size: 0.9rem; max-width: 620px; margin-bottom: 1.1rem;">
+          Food label analysis personalised to your active allergy profile and custom monitored terms.
+        </p>
+        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
+          <a href="{{ url_for('main.scan') }}" class="btn btn-primary">
+            <i data-lucide="camera"></i> Scan Food Label
+          </a>
+          <a href="{{ url_for('main.scan_barcode') }}" class="btn btn-secondary">
+            <i data-lucide="barcode"></i> Scan Barcode
+          </a>
+          <a href="{{ url_for('main.profile') }}" class="btn btn-secondary">
+            <i data-lucide="shield-check"></i> Allergy Profile
+          </a>
+        </div>
+      {% endif %}
     </div>
     
     <div style="background: var(--primary-light); border: 1px solid var(--primary-border); padding: 0.85rem 1.1rem; border-radius: var(--radius-md); text-align: right; min-width: 200px;">

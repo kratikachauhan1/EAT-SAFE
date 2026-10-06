@@ -63,10 +63,10 @@ def test_registration_and_login(client):
     res_public = client.get('/', follow_redirects=False)
     assert res_public.status_code == 200
 
-    # TEST 11: Directly open protected URL (/profile) while logged out -> redirect to Login
+    # TEST 11: Directly open /profile while logged out -> returns 200 with Guest Mode callout
     res = client.get('/profile', follow_redirects=False)
-    assert res.status_code == 302
-    assert '/login' in res.location
+    assert res.status_code == 200
+    assert b"Guest Mode" in res.data or b"Sign in" in res.data or b"Sign In" in res.data
 
 def test_user_allergy_and_scan_isolation(client, app):
     with app.app_context():

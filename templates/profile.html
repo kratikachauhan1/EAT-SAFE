@@ -47,7 +47,17 @@
         </div>
       {% endfor %}
 
-      {% if not user_allergy_ids and not custom_allergens %}
+      {% if is_guest %}
+        <div style="width: 100%; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; background: #fffbeb; border: 1px solid #fde68a; padding: 0.75rem 1rem; border-radius: var(--radius-md);">
+          <span style="font-size: 0.85rem; color: #b45309; font-weight: 600;">
+            💡 Guest Mode: Browsing FSSAI system allergens. Sign in or create a free profile to save your monitored allergen preferences.
+          </span>
+          <div style="display: flex; gap: 0.5rem;">
+            <a href="{{ url_for('main.login') }}" class="btn btn-secondary btn-sm" style="font-size: 0.78rem;">Sign In</a>
+            <a href="{{ url_for('main.register') }}" class="btn btn-primary btn-sm" style="font-size: 0.78rem;">Create Account</a>
+          </div>
+        </div>
+      {% elif not user_allergy_ids and not custom_allergens %}
         <span style="font-size: 0.88rem; color: var(--text-tertiary); italic;">No active allergens selected yet. Select from the categories below or add custom terms.</span>
       {% endif %}
     </div>

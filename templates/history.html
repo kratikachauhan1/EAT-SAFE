@@ -127,15 +127,26 @@
     <!-- Professional Empty State -->
     <div style="text-align: center; padding: 3rem 1.5rem; background-color: var(--bg-page); border-radius: var(--radius-md); border: 1px dashed var(--border-medium);">
       <div style="width: 52px; height: 52px; border-radius: var(--radius-full); background: #ffffff; border: 1px solid var(--border-subtle); display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem auto; color: var(--text-secondary);">
-        <i data-lucide="inbox" style="width: 24px; height: 24px;"></i>
+        <i data-lucide="history" style="width: 24px; height: 24px;"></i>
       </div>
-      <h4 style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.25rem;">No scan history found</h4>
-      <p style="font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 1.25rem;">
-        Scan your first food packaging label to start your personalized scan history log.
-      </p>
-      <a href="{{ url_for('main.scan') }}" class="btn btn-primary">
-        <i data-lucide="scan"></i> Scan Your First Label
-      </a>
+      {% if is_guest %}
+        <h4 style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.25rem;">Scan History Log</h4>
+        <p style="font-size: 0.88rem; color: var(--text-secondary); max-width: 460px; margin: 0 auto 1.25rem;">
+          Scan History stores your past food label analyses and barcode lookups across devices. Sign in or create a free account to track your scan history log.
+        </p>
+        <div style="display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;">
+          <a href="{{ url_for('main.login') }}" class="btn btn-secondary">Sign In</a>
+          <a href="{{ url_for('main.register') }}" class="btn btn-primary">Create Free Account</a>
+        </div>
+      {% else %}
+        <h4 style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.25rem;">No scan history found</h4>
+        <p style="font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 1.25rem;">
+          Scan your first food packaging label to start your personalized scan history log.
+        </p>
+        <a href="{{ url_for('main.scan') }}" class="btn btn-primary">
+          <i data-lucide="scan"></i> Scan Your First Label
+        </a>
+      {% endif %}
     </div>
   {% endif %}
 

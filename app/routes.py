@@ -79,17 +79,22 @@ def about():
 
 
 @bp.route('/dashboard')
-@login_required
 def dashboard():
-    user_id = session['user_id']
-    user = get_user_by_id(user_id)
-    user_allergy_ids = get_user_allergy_ids(user_id)
-    allergens = get_all_allergens()
-    
-    selected_allergens = [a for a in allergens if a['allergen_id'] in user_allergy_ids]
-    recent_scans = get_scan_history(user_id, limit=5)
-    saved_products = get_user_saved_products(user_id)[:4]
-    metrics = get_dashboard_metrics(user_id)
+    user_id = session.get('user_id')
+    user = get_user_by_id(user_id) if user_id else None
+
+    selected_allergens = []
+    recent_scans = []
+    saved_products = []
+    metrics = None
+
+    if user:
+        user_allergy_ids = get_user_allergy_ids(user['user_id'])
+        allergens = get_all_allergens()
+        selected_allergens = [a for a in allergens if a['allergen_id'] in user_allergy_ids]
+        recent_scans = get_scan_history(user['user_id'], limit=5)
+        saved_products = get_user_saved_products(user['user_id'])[:4]
+        metrics = get_dashboard_metrics(user['user_id'])
 
     return render_template(
         'index.html',
@@ -97,7 +102,8 @@ def dashboard():
         selected_allergens=selected_allergens,
         recent_scans=recent_scans,
         saved_products=saved_products,
-        metrics=metrics
+        metrics=metrics,
+        is_guest=(not user)
     )
 
 
@@ -416,11 +422,11 @@ def result(scan_id):
 # ===================================================
 
 @bp.route('/products')
-@login_required
 def saved_products():
-    user_id = session['user_id']
-    saved = get_user_saved_products(user_id)
-    return render_template('saved_products.html', saved_products=saved)
+    user_id = session.get('user_id')
+    user = get_user_by_id(user_id) if user_id else None
+    saved = get_user_saved_products(user['user_id']) if user else []
+    return render_template('saved_products.html', user=user, saved_products=saved, is_guest=(not user))
 
 
 @bp.route('/products/save/<int:scan_id>', methods=['POST'])
@@ -456,25 +462,30 @@ def api_search_allergens():
 
 
 @bp.route('/profile', methods=['GET', 'POST'])
-@login_required
 def profile():
-    user_id = session['user_id']
+    user_id = session.get('user_id')
+    user = get_user_by_id(user_id) if user_id else None
     allergens = get_all_allergens()
-    custom_allergens = get_user_custom_allergens(user_id)
+    custom_allergens = get_user_custom_allergens(user['user_id']) if user else []
 
     if request.method == 'POST':
+        if not user:
+            flash('Please sign in or create a free account to save your personalized allergen profile.', 'info')
+            return redirect(url_for('main.settings'))
         selected_ids = request.form.getlist('allergens')
-        update_user_allergies(user_id, selected_ids)
-        logger.info(f"Updated allergy profile for user_id={user_id}, count={len(selected_ids)}")
+        update_user_allergies(user['user_id'], selected_ids)
+        logger.info(f"Updated allergy profile for user_id={user['user_id']}, count={len(selected_ids)}")
         flash('Allergy profile updated successfully!', 'success')
         return redirect(url_for('main.profile'))
 
-    user_allergy_ids = get_user_allergy_ids(user_id)
+    user_allergy_ids = get_user_allergy_ids(user['user_id']) if user else set()
     return render_template(
         'profile.html',
+        user=user,
         allergens=allergens,
         user_allergy_ids=user_allergy_ids,
-        custom_allergens=custom_allergens
+        custom_allergens=custom_allergens,
+        is_guest=(not user)
     )
 
 
@@ -509,23 +520,25 @@ def delete_custom_allergen(custom_id):
 # ===================================================
 
 @bp.route('/history')
-@login_required
 def history():
-    user_id = session['user_id']
+    user_id = session.get('user_id')
+    user = get_user_by_id(user_id) if user_id else None
     page = request.args.get('page', 1, type=int)
     query = request.args.get('q', '').strip()
     status_filter = request.args.get('status', 'all').strip()
     sort_order = request.args.get('sort', 'newest').strip()
 
-    history_data = get_paginated_scan_history(
-        user_id,
-        page=page,
-        per_page=12,
-        search_query=query,
-        status_filter=status_filter,
-        sort_order=sort_order
-    )
-    return render_template('history.html', history=history_data, query=query, status_filter=status_filter, sort_order=sort_order)
+    history_data = None
+    if user:
+        history_data = get_paginated_scan_history(
+            user['user_id'],
+            page=page,
+            per_page=12,
+            search_query=query,
+            status_filter=status_filter,
+            sort_order=sort_order
+        )
+    return render_template('history.html', user=user, history=history_data, query=query, status_filter=status_filter, sort_order=sort_order, is_guest=(not user))
 
 
 @bp.route('/history/delete/<int:scan_id>', methods=['POST'])
@@ -545,10 +558,10 @@ def delete_scan_action(scan_id):
 # ===================================================
 
 @bp.route('/settings')
-@login_required
 def settings():
-    user = get_user_by_id(session['user_id'])
-    return render_template('settings.html', user=user)
+    user_id = session.get('user_id')
+    user = get_user_by_id(user_id) if user_id else None
+    return render_template('settings.html', user=user, is_guest=(not user))
 
 
 @bp.route('/settings/profile', methods=['POST'])

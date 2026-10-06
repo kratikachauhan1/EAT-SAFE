@@ -59,13 +59,24 @@
     <div style="width: 56px; height: 56px; border-radius: 50%; background-color: var(--primary-light); color: var(--primary); display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;">
       <i data-lucide="bookmark" style="width: 28px; height: 28px;"></i>
     </div>
-    <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 0.5rem;">No Saved Products Yet</h3>
-    <p style="font-size: 0.9rem; color: var(--text-secondary); max-width: 420px; margin: 0 auto 1.5rem;">
-      When you scan a food label, you can save the result here for quick access before purchasing or consuming.
-    </p>
-    <a href="{{ url_for('main.scan') }}" class="btn btn-primary">
-      <i data-lucide="camera"></i> Scan a Food Label
-    </a>
+    {% if is_guest %}
+      <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 0.5rem;">Saved Products Feature</h3>
+      <p style="font-size: 0.9rem; color: var(--text-secondary); max-width: 460px; margin: 0 auto 1.5rem;">
+        Saved Products allow you to bookmark food safety reports and recall them instantly before shopping. Sign in or create a free account to save products to your profile.
+      </p>
+      <div style="display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;">
+        <a href="{{ url_for('main.login') }}" class="btn btn-secondary">Sign In</a>
+        <a href="{{ url_for('main.register') }}" class="btn btn-primary">Create Free Account</a>
+      </div>
+    {% else %}
+      <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 0.5rem;">No Saved Products Yet</h3>
+      <p style="font-size: 0.9rem; color: var(--text-secondary); max-width: 420px; margin: 0 auto 1.5rem;">
+        When you scan a food label, you can save the result here for quick access before purchasing or consuming.
+      </p>
+      <a href="{{ url_for('main.scan') }}" class="btn btn-primary">
+        <i data-lucide="camera"></i> Scan a Food Label
+      </a>
+    {% endif %}
   </div>
 {% endif %}
 

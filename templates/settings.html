@@ -19,47 +19,72 @@
       <h3 class="saas-card-title">
         <i data-lucide="user-check"></i> Account Overview
       </h3>
-      <span class="badge badge-success"><span class="status-dot"></span> Profile Active</span>
+      {% if user %}
+        <span class="badge badge-success"><span class="status-dot"></span> Profile Active</span>
+      {% else %}
+        <span class="badge badge-warning">Guest Mode</span>
+      {% endif %}
     </div>
 
-    <div style="display: flex; align-items: center; gap: 1.25rem; padding: 0.5rem 0; flex-wrap: wrap;">
-      <div class="user-avatar" style="width: 60px; height: 60px; font-size: 1.35rem;">
-        {{ (user.full_name or user.username)[:2].upper() }}
+    {% if user %}
+      <div style="display: flex; align-items: center; gap: 1.25rem; padding: 0.5rem 0; flex-wrap: wrap;">
+        <div class="user-avatar" style="width: 60px; height: 60px; font-size: 1.35rem;">
+          {{ (user.full_name or user.username)[:2].upper() }}
+        </div>
+        <div>
+          <h2 style="font-size: 1.25rem; font-weight: 800; color: var(--text-primary);">
+            {{ user.full_name or user.username }}
+          </h2>
+          <div style="font-size: 0.88rem; color: var(--text-secondary); display: flex; gap: 1rem; margin-top: 0.2rem; flex-wrap: wrap;">
+            <span><strong>Username:</strong> @{{ user.username }}</span>
+            <span>•</span>
+            <span><strong>Email:</strong> {{ user.email }}</span>
+          </div>
+          <div style="font-size: 0.78rem; color: var(--text-tertiary); margin-top: 0.25rem;">
+            Account Created: {{ str(user.created_at)[:10] if user.created_at else 'Active' }}
+          </div>
+        </div>
       </div>
-      <div>
-        <h2 style="font-size: 1.25rem; font-weight: 800; color: var(--text-primary);">
-          {{ user.full_name or user.username }}
+    {% else %}
+      <div style="padding: 0.5rem 0;">
+        <h2 style="font-size: 1.2rem; font-weight: 800; color: var(--text-primary); margin-bottom: 0.25rem;">
+          Sign In or Create Account
         </h2>
-        <div style="font-size: 0.88rem; color: var(--text-secondary); display: flex; gap: 1rem; margin-top: 0.2rem; flex-wrap: wrap;">
-          <span><strong>Username:</strong> @{{ user.username }}</span>
-          <span>•</span>
-          <span><strong>Email:</strong> {{ user.email }}</span>
-        </div>
-        <div style="font-size: 0.78rem; color: var(--text-tertiary); margin-top: 0.25rem;">
-          Account Created: {{ str(user.created_at)[:10] if user.created_at else 'Active' }}
+        <p style="font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 1rem;">
+          Sign in or register a free account to customize your monitored allergens, save food safety reports, and sync your scan history across devices.
+        </p>
+        <div style="display: flex; gap: 0.75rem;">
+          <a href="{{ url_for('main.login') }}" class="btn btn-secondary btn-sm">
+            <i data-lucide="log-in"></i> Sign In Page
+          </a>
+          <a href="{{ url_for('main.register') }}" class="btn btn-primary btn-sm">
+            <i data-lucide="user-plus"></i> Create Account Page
+          </a>
         </div>
       </div>
-    </div>
+    {% endif %}
   </div>
 
-  <!-- Settings Navigation Tabs -->
-  <div class="settings-nav-tabs" style="display: flex; gap: 0.5rem; overflow-x: auto; border-bottom: 2px solid var(--border-subtle); padding-bottom: 0.5rem;">
-    <button class="settings-tab-btn active" onclick="switchSettingsTab('account', this)">
-      <i data-lucide="user"></i> Account
-    </button>
-    <button class="settings-tab-btn" onclick="switchSettingsTab('security', this)">
-      <i data-lucide="key-round"></i> Security
-    </button>
-    <button class="settings-tab-btn" onclick="switchSettingsTab('privacy', this)">
-      <i data-lucide="download-cloud"></i> Privacy & Export
-    </button>
-    <button class="settings-tab-btn" onclick="switchSettingsTab('preferences', this)">
-      <i data-lucide="sliders"></i> Preferences
-    </button>
-    <button class="settings-tab-btn danger-tab" onclick="switchSettingsTab('safety', this)">
-      <i data-lucide="alert-triangle"></i> Safety & Deletion
-    </button>
-  </div>
+  {% if user %}
+    <!-- Settings Navigation Tabs (Logged In User) -->
+    <div class="settings-nav-tabs" style="display: flex; gap: 0.5rem; overflow-x: auto; border-bottom: 2px solid var(--border-subtle); padding-bottom: 0.5rem;">
+      <button class="settings-tab-btn active" onclick="switchSettingsTab('account', this)">
+        <i data-lucide="user"></i> Account
+      </button>
+      <button class="settings-tab-btn" onclick="switchSettingsTab('security', this)">
+        <i data-lucide="key-round"></i> Security
+      </button>
+      <button class="settings-tab-btn" onclick="switchSettingsTab('privacy', this)">
+        <i data-lucide="download-cloud"></i> Privacy & Export
+      </button>
+      <button class="settings-tab-btn" onclick="switchSettingsTab('preferences', this)">
+        <i data-lucide="sliders"></i> Preferences
+      </button>
+      <button class="settings-tab-btn danger-tab" onclick="switchSettingsTab('safety', this)">
+        <i data-lucide="alert-triangle"></i> Safety & Deletion
+      </button>
+    </div>
+  {% endif %}
 
   <!-- TAB 1: ACCOUNT PROFILE -->
   <div id="tab-account" class="settings-tab-panel">
