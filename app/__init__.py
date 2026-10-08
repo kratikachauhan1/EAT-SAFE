@@ -48,8 +48,10 @@ def create_app(config_overrides=None):
     # Wrap WSGI app with ProxyFix so Flask recognizes HTTPS scheme, client IP, host, and port behind reverse proxies
     app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1, x_prefix=1)
 
-    # Production vs Development environment detection (Default to production in Docker/Render)
-    env = os.environ.get('ENVIRONMENT', os.environ.get('FLASK_ENV', os.environ.get('APP_ENV', 'production'))).lower()
+    # Production vs Development environment detection (Render/Dockerfile sets ENVIRONMENT=production)
+    env = os.environ.get('ENVIRONMENT', os.environ.get('FLASK_ENV', os.environ.get('APP_ENV', 'development'))).lower()
+    if config_overrides and 'ENVIRONMENT' in config_overrides:
+        env = config_overrides['ENVIRONMENT'].lower()
     is_prod = (env == 'production')
     build_commit = get_git_revision()
 

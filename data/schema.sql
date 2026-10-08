@@ -109,6 +109,57 @@ CREATE TABLE IF NOT EXISTS audit_logs (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Dynamic Relational Knowledge Schema
+CREATE TABLE IF NOT EXISTS ingredients (
+    ingredient_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    canonical_name TEXT NOT NULL UNIQUE,
+    category_code TEXT,
+    description TEXT,
+    is_allergen INTEGER DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (category_code) REFERENCES allergens(category_code) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS ingredient_aliases (
+    alias_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ingredient_id INTEGER NOT NULL,
+    alias_name TEXT NOT NULL,
+    language TEXT DEFAULT 'en',
+    match_type TEXT DEFAULT 'exact',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (ingredient_id) REFERENCES ingredients(ingredient_id) ON DELETE CASCADE,
+    UNIQUE(ingredient_id, alias_name)
+);
+
+CREATE TABLE IF NOT EXISTS ingredient_relationships (
+    relationship_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    parent_ingredient_id INTEGER NOT NULL,
+    child_ingredient_id INTEGER NOT NULL,
+    relationship_type TEXT NOT NULL,
+    confidence REAL DEFAULT 1.0,
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (parent_ingredient_id) REFERENCES ingredients(ingredient_id) ON DELETE CASCADE,
+    FOREIGN KEY (child_ingredient_id) REFERENCES ingredients(ingredient_id) ON DELETE CASCADE,
+    UNIQUE(parent_ingredient_id, child_ingredient_id, relationship_type)
+);
+
+CREATE TABLE IF NOT EXISTS knowledge_sources (
+    source_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    source_name TEXT NOT NULL UNIQUE,
+    source_url TEXT,
+    version TEXT,
+    retrieved_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS knowledge_versions (
+    version_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    version_tag TEXT NOT NULL UNIQUE,
+    description TEXT,
+    records_count INTEGER DEFAULT 0,
+    applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Performance Indexes
 CREATE INDEX IF NOT EXISTS idx_scans_user_id ON scans(user_id);
 CREATE INDEX IF NOT EXISTS idx_scans_created_at ON scans(created_at DESC);
@@ -116,3 +167,7 @@ CREATE INDEX IF NOT EXISTS idx_user_allergies_user_id ON user_allergies(user_id)
 CREATE INDEX IF NOT EXISTS idx_user_custom_allergens_user_id ON user_custom_allergens(user_id);
 CREATE INDEX IF NOT EXISTS idx_saved_products_user_id ON saved_products(user_id);
 CREATE INDEX IF NOT EXISTS idx_detection_results_scan_id ON detection_results(scan_id);
+CREATE INDEX IF NOT EXISTS idx_ingredient_aliases_name ON ingredient_aliases(alias_name);
+CREATE INDEX IF NOT EXISTS idx_ingredients_canonical ON ingredients(canonical_name);
+CREATE INDEX IF NOT EXISTS idx_ingredient_relationships_child ON ingredient_relationships(child_ingredient_id);
+
